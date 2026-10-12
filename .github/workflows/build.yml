@@ -27,8 +27,14 @@ jobs:
         env: {QT_QPA_PLATFORM: offscreen}
         continue-on-error: true
       - run: pyinstaller --noconfirm --windowed --name "Cek Bukti TF e-guru.id" --collect-data googleapiclient --collect-data certifi main.py
-      - if: matrix.os == 'windows-latest'
-        run: Copy-Item -Recurse vendor "dist/Cek Bukti TF e-guru.id"/vendor
+      - name: Salin vendor Tesseract (Windows)
+        if: matrix.os == 'windows-latest'
         shell: pwsh
+        run: |
+          Copy-Item -Recurse -Force vendor "dist\Cek Bukti TF e-guru.id\vendor"
       - uses: actions/upload-artifact@v4
-        with: {name: "CekBukti-eguru-${{ matrix.name }}", path: dist}
+        with:
+          name: "CekBukti-eguru-${{ matrix.name }}"
+          path: |
+            dist/Cek Bukti TF e-guru.id
+            dist/Cek Bukti TF e-guru.id.app
