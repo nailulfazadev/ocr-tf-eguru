@@ -250,20 +250,24 @@ def start_process(payload: Dict[str, str]):
 
     def on_result(res):
         ext_dict = None
-        if res.extracted:
+        if getattr(res, "ext", None):
+            ext = res.ext
+            prim_val = ext.primary.value if ext.primary else None
+            dt_str = ext.dt.strftime("%d/%m/%Y %H:%M") if ext.dt else None
             ext_dict = {
-                "nominal": res.extracted.primary.value if res.extracted.primary else None,
-                "date": res.extracted.dt.strftime("%d/%m/%Y %H:%M") if res.extracted.dt else None,
-                "ref": res.extracted.ref,
-                "dest": res.extracted.dest.raw if res.extracted.dest else None,
+                "nominal": prim_val,
+                "date": dt_str,
+                "ref": ext.ref,
+                "source": ext.source,
+                "conf": ext.conf,
             }
         item = {
             "row": res.row.row,
             "nama": res.row.nama,
-            "nominal_target": res.row.nominal,
-            "status": res.verdict.status,
-            "reasons": res.verdict.reasons,
-            "infos": res.verdict.infos,
+            "nominal_target": res.row.nominal_raw,
+            "status": res.status,
+            "reasons": getattr(res.verdict, "reasons", []),
+            "infos": getattr(res.verdict, "infos", []),
             "note": res.note,
             "extracted": ext_dict,
         }
@@ -336,14 +340,17 @@ def get_review_queue(event_name: Optional[str] = None, mode: str = "manual"):
         sheets_client = _make_sheets(cfg.spreadsheet_id, cfg.sheet_title, cfg.sheet_id)
         queue = load_review_queue(sheets_client, cfg, mode=mode)
         items = []
+        from app.parser import parse_amount
         for r in queue:
+            parsed_nom = parse_amount(r.nominal_raw)
             items.append({
                 "row": r.row,
                 "nama": r.nama,
-                "nominal": r.nominal,
+                "nominal": parsed_nom if parsed_nom is not None else r.nominal_raw,
+                "nominal_raw": r.nominal_raw,
                 "rekening": r.rekening_raw,
                 "link": r.link_raw,
-                "timestamp": r.timestamp,
+                "timestamp": r.timestamp_raw,
                 "check": r.check,
                 "note": r.note,
                 "ref": r.ref
@@ -366,7 +373,7 @@ def post_manual_decision(req: ManualDecisionRequest):
     cfg = s.config_for(req.event_name)
     sheets_client = _make_sheets(cfg.spreadsheet_id, cfg.sheet_title, cfg.sheet_id)
     from app.models import SheetRow
-    row_dummy = SheetRow(row=req.row, link_raw="", nominal=0, rekening_raw="", nama="", timestamp="", check=False, note=req.note)
+    row_dummy = SheetRow(row=req.row, link_raw="", nominal_raw="", rekening_raw="", nama="", timestamp_raw="", check=False, note=req.note)
     try:
         note_result = apply_manual(sheets_client, cfg, row_dummy, req.ok, req.officer or "petugas", req.reason or "")
         return {"status": "ok", "note": note_result}
