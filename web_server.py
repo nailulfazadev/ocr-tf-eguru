@@ -11,9 +11,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.config import Config, Store, APP_DIR, parse_spreadsheet_id, parse_gid
-from app.sheets import SheetsClient, DriveClient
+from app.sheets import SheetsClient, DriveClient, get_credentials
 from app.pipeline import Engine, load_review_queue, apply_manual
 from app.gemini import GeminiReader
+
+def _make_sheets(spreadsheet_id: str, sheet_title: str = "", sheet_id: int = 0) -> SheetsClient:
+    """Buat SheetsClient dengan credentials otomatis."""
+    creds = get_credentials()
+    return SheetsClient(creds, spreadsheet_id, sheet_title, sheet_id)
+
+def _make_drive() -> DriveClient:
+    """Buat DriveClient dengan credentials otomatis."""
+    creds = get_credentials()
+    return DriveClient(creds)
 
 def test_gemini_key(key: str, model: str = "gemini-3.5-flash-lite") -> tuple[bool, str, list[str]]:
     try:
@@ -169,7 +179,7 @@ def connect_sheets(payload: Dict[str, str]):
     if not sheet_id:
         raise HTTPException(status_code=400, detail="URL spreadsheet tidak valid")
     try:
-        client = SheetsClient(sheet_id)
+        client = _make_sheets(sheet_id)
         tabs = client.list_tabs()
         return {
             "status": "ok",
@@ -198,8 +208,8 @@ def start_process(payload: Dict[str, str]):
     cfg = s.config_for(event_name or s.last_event)
     
     try:
-        sheets_client = SheetsClient(cfg.spreadsheet_id)
-        drive_client = DriveClient()
+        sheets_client = _make_sheets(cfg.spreadsheet_id, cfg.sheet_title, cfg.sheet_id)
+        drive_client = _make_drive()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Koneksi Google gagal: {str(e)}")
 
@@ -293,7 +303,7 @@ def get_review_queue(event_name: Optional[str] = None, mode: str = "manual"):
     name = event_name if event_name and event_name != "undefined" else s.last_event
     cfg = s.config_for(name or (s.names()[0] if s.names() else "Event 1"))
     try:
-        sheets_client = SheetsClient(cfg.spreadsheet_id)
+        sheets_client = _make_sheets(cfg.spreadsheet_id, cfg.sheet_title, cfg.sheet_id)
         queue = load_review_queue(sheets_client, cfg, mode=mode)
         items = []
         for r in queue:
@@ -324,7 +334,7 @@ class ManualDecisionRequest(BaseModel):
 def post_manual_decision(req: ManualDecisionRequest):
     s = Store.load()
     cfg = s.config_for(req.event_name)
-    sheets_client = SheetsClient(cfg.spreadsheet_id)
+    sheets_client = _make_sheets(cfg.spreadsheet_id, cfg.sheet_title, cfg.sheet_id)
     from app.models import SheetRow
     row_dummy = SheetRow(row=req.row, link_raw="", nominal=0, rekening_raw="", nama="", timestamp="", check=False, note=req.note)
     try:
