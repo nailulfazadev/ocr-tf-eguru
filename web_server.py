@@ -18,7 +18,16 @@ from app.gemini import GeminiReader
 def _make_sheets(spreadsheet_id: str, sheet_title: str = "", sheet_id: int = 0) -> SheetsClient:
     """Buat SheetsClient dengan credentials otomatis."""
     creds = get_credentials(allow_browser=False)
-    return SheetsClient(creds, spreadsheet_id, sheet_title, sheet_id)
+    client = SheetsClient(creds, spreadsheet_id, sheet_title, sheet_id)
+    if not sheet_title and spreadsheet_id:
+        try:
+            tabs = client.list_tabs()
+            if tabs:
+                client.title = tabs[0][0]
+                client.sheet_id = tabs[0][1]
+        except Exception:
+            pass
+    return client
 
 def _make_drive() -> DriveClient:
     """Buat DriveClient dengan credentials otomatis."""
@@ -206,7 +215,23 @@ def start_process(payload: Dict[str, str]):
     
     event_name = payload.get("event_name")
     s = Store.load()
-    cfg = s.config_for(event_name or s.last_event)
+    name = event_name or s.last_event or (s.names()[0] if s.names() else "Event 1")
+    cfg = s.config_for(name)
+    
+    if not cfg.spreadsheet_url and not cfg.spreadsheet_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Spreadsheet belum diatur. Buka tab 'Pengaturan', isi URL Spreadsheet Google Sheets, klik 'Hubungkan', lalu 'Simpan Pengaturan Event'."
+        )
+    
+    if not cfg.spreadsheet_id and cfg.spreadsheet_url:
+        cfg.spreadsheet_id = parse_spreadsheet_id(cfg.spreadsheet_url)
+    
+    if not cfg.spreadsheet_id:
+        raise HTTPException(
+            status_code=400,
+            detail="URL Spreadsheet tidak valid. Pastikan link spreadsheet Google Sheets sudah benar."
+        )
     
     try:
         sheets_client = _make_sheets(cfg.spreadsheet_id, cfg.sheet_title, cfg.sheet_id)
@@ -303,6 +328,10 @@ def get_review_queue(event_name: Optional[str] = None, mode: str = "manual"):
     s = Store.load()
     name = event_name if event_name and event_name != "undefined" else s.last_event
     cfg = s.config_for(name or (s.names()[0] if s.names() else "Event 1"))
+    if not cfg.spreadsheet_id and cfg.spreadsheet_url:
+        cfg.spreadsheet_id = parse_spreadsheet_id(cfg.spreadsheet_url)
+    if not cfg.spreadsheet_id:
+        return {"items": [], "count": 0, "message": "Spreadsheet belum diatur"}
     try:
         sheets_client = _make_sheets(cfg.spreadsheet_id, cfg.sheet_title, cfg.sheet_id)
         queue = load_review_queue(sheets_client, cfg, mode=mode)

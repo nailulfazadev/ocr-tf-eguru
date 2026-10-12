@@ -703,6 +703,7 @@ async function saveGlobalConfig() {
 async function testSheetConn() {
   const url = $('cfgUrl').value || $('testUrl').value;
   if (!url) return toast('Isi URL Spreadsheet terlebih dahulu.', 'err');
+  addLog('Menghubungkan ke Google Sheets...', 'info');
   const r = await fetch('/api/sheets/connect', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({url}) });
   const d = await r.json();
   if (r.ok) {
@@ -710,10 +711,14 @@ async function testSheetConn() {
     if (d.tabs) fillSheetTabs(d.tabs, 0);
     $('sheetConnResult').textContent = `✅ Terhubung: "${d.title}" — ${d.tabs.length} tab ditemukan.`;
     $('sheetConnResult').style.color = '#34d399';
+    addLog(`✅ Terhubung ke spreadsheet: "${d.title}" (${d.tabs.length} tab ditemukan)`, 'ok');
+    // Simpan otomatis ke konfigurasi event agar tidak perlu manual klik simpan
+    await saveEventConfig();
   } else {
     $('sheetConnResult').textContent = '❌ ' + (d.detail || 'Gagal');
     $('sheetConnResult').style.color = '#f87171';
-    toast(d.detail || 'Gagal menghubungkan', 'err');
+    toast(d.detail || 'Gagal menghubungkan', 'err', 6000);
+    addLog('❌ Gagal menghubungkan spreadsheet: ' + (d.detail || 'Gagal'), 'err');
   }
 }
 
@@ -722,16 +727,24 @@ async function uploadKey() {
   if (!fi.files.length) return toast('Pilih file .json terlebih dahulu.', 'err');
   const fd = new FormData();
   fd.append('file', fi.files[0]);
+  addLog('Mengunggah kunci Google...', 'info');
   const r = await fetch('/api/credentials/upload', { method: 'POST', body: fd });
   const d = await r.json();
-  if (r.ok) { toast(d.message); loadConfig(state.currentEvent); }
-  else toast(d.detail || 'Gagal mengunggah', 'err');
+  if (r.ok) {
+    toast(d.message, 'ok', 6000);
+    addLog('✅ ' + d.message, 'ok');
+    loadConfig(state.currentEvent);
+  } else {
+    toast(d.detail || 'Gagal mengunggah', 'err', 6000);
+    addLog('❌ Gagal mengunggah kunci: ' + (d.detail || 'Gagal'), 'err');
+  }
 }
 
 async function testGemini() {
   const key = $('cfgGeminiKey').value.trim();
   const model = $('cfgGeminiModel').value.trim();
   if (!key) return toast('Isi API Key Gemini terlebih dahulu.', 'err');
+  addLog('Menguji API key Gemini...', 'info');
   const r = await fetch('/api/gemini/test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key, model}) });
   const d = await r.json();
   const el = $('geminiTestResult');
@@ -741,16 +754,43 @@ async function testGemini() {
     el.textContent += '\nModel tersedia: ' + d.models.slice(0,5).join(', ');
   }
   toast(d.ok ? 'Gemini OK!' : 'Tes Gemini gagal', d.ok ? 'ok' : 'err');
+  addLog((d.ok ? '✅ ' : '❌ ') + d.message, d.ok ? 'ok' : 'err');
 }
 
 // =========================================================
 // PROCESS CONTROLS
 // =========================================================
 async function doStart() {
-  const r = await fetch('/api/process/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({event_name: state.currentEvent}) });
-  const d = await r.json();
-  if (r.ok) setStatus(true, false);
-  else toast(d.detail || 'Gagal memulai proses', 'err');
+  if (!state.hasCreds) {
+    addLog('⚠️ Kunci Google belum aktif. Silakan unggah service_account.json di tab "Kunci & API".', 'warn');
+    toast('Unggah service_account.json terlebih dahulu di tab "Kunci & API".', 'err', 5000);
+    return;
+  }
+  if (!state.config.spreadsheet_url && !state.config.spreadsheet_id) {
+    addLog('⚠️ Spreadsheet belum diatur. Buka tab "Pengaturan" untuk menghubungkan spreadsheet.', 'warn');
+    toast('Spreadsheet belum diatur. Buka tab "Pengaturan".', 'err', 5000);
+    return;
+  }
+  addLog('Menghubungi server untuk memulai proses...', 'info');
+  try {
+    const r = await fetch('/api/process/start', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({event_name: state.currentEvent})
+    });
+    const d = await r.json();
+    if (r.ok) {
+      setStatus(true, false);
+      addLog('▶ Proses dimulai untuk event: ' + state.currentEvent, 'ok');
+    } else {
+      const errDetail = d.detail || ('Error ' + r.status);
+      addLog('❌ Gagal memulai: ' + errDetail, 'err');
+      toast(errDetail, 'err', 6000);
+    }
+  } catch (err) {
+    addLog('❌ Gagal menghubungi server: ' + err.message, 'err');
+    toast('Gagal menghubungi server: ' + err.message, 'err', 6000);
+  }
 }
 
 async function doPause() {
