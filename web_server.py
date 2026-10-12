@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.config import Config, Store, APP_DIR, parse_spreadsheet_id, parse_gid
-from app.sheets import SheetsClient, DriveClient, get_credentials
+from app.sheets import SheetsClient, DriveClient, get_credentials, find_service_account
 from app.pipeline import Engine, load_review_queue, apply_manual
 from app.gemini import GeminiReader
 
@@ -105,7 +105,7 @@ def get_config(event_name: Optional[str] = None):
             "events": s.names(),
             "current_event": name,
             "config": cfg.__dict__,
-            "has_credentials": (APP_DIR / "service_account.json").exists() or (APP_DIR / "client_secret.json").exists(),
+            "has_credentials": bool(find_service_account()) or (APP_DIR / "client_secret.json").exists() or (Path.cwd() / "client_secret.json").exists(),
             "is_running": state.is_running,
             "is_paused": state.is_paused,
             "progress": state.progress,
@@ -181,12 +181,11 @@ def connect_sheets(payload: Dict[str, str]):
     try:
         client = _make_sheets(sheet_id)
         tabs = client.list_tabs()
-        # Ambil judul spreadsheet dari metadata tabs jika memungkinkan
-        title = tabs[0][0].split("!")[0] if tabs else sheet_id
+        title = client.get_spreadsheet_title()
         return {
             "status": "ok",
             "spreadsheet_id": sheet_id,
-            "title": f"Spreadsheet ({sheet_id[:20]}...)" if len(sheet_id) > 20 else sheet_id,
+            "title": title,
             "tabs": [{"title": t, "id": i, "rows": r} for t, i, r in tabs]
         }
     except Exception as e:

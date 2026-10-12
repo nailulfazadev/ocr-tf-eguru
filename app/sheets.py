@@ -147,6 +147,16 @@ class SheetsClient:
     def _q(self, a1: str) -> str:
         return f"'{self.title.replace(chr(39), chr(39) * 2)}'!{a1}"
 
+    def get_spreadsheet_title(self) -> str:
+        try:
+            with self._lock:
+                r = retry(lambda: self._svc.spreadsheets().get(
+                    spreadsheetId=self.id,
+                    fields="properties.title").execute())
+            return r.get("properties", {}).get("title", self.id)
+        except Exception:
+            return self.id
+
     def list_tabs(self) -> list[tuple[str, int, int]]:
         with self._lock:
             r = retry(lambda: self._svc.spreadsheets().get(
