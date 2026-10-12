@@ -12,8 +12,16 @@ from pydantic import BaseModel
 
 from app.config import Config, Store, APP_DIR, parse_spreadsheet_id, parse_gid
 from app.sheets import SheetsClient, DriveClient
-from app.pipeline import Engine, load_review_queue, apply_manual
-from app.gemini import GeminiReader, test_gemini_key
+from app.gemini import GeminiReader
+
+def test_gemini_key(key: str, model: str = "gemini-3.5-flash-lite") -> tuple[bool, str, list[str]]:
+    try:
+        r = GeminiReader(key, model)
+        msg = r.ping()
+        models = r.available_models()
+        return True, f"Kunci Gemini aktif ({msg})", models
+    except Exception as e:
+        return False, f"Tes gagal: {e}", []
 
 app = FastAPI(title="Cek Bukti TF e-guru.id - Web Edition")
 
