@@ -56,51 +56,62 @@ app.add_middleware(
 # State manager
 class AppState:
     def __init__(self):
-        self.active_engine: Optional[Any] = None  # Engine, diisi saat proses berjalan
-        self.engine_thread: Optional[threading.Thread] = None
-        self.is_running = False
-        self.is_paused = False
-        self.progress = {"done": 0, "total": 0, "percent": 0}
-        self.recent_logs: List[str] = []
+        self.engines: Dict[str, Any] = {}          # event_name -> Engine
+        self.threads: Dict[str, threading.Thread] = {}
+        self.running_events: Dict[str, bool] = {}   # event_name -> is_running
+        self.paused_events: Dict[str, bool] = {}
+        self.event_progress: Dict[str, dict] = {}   # event_name -> {"done": 0, "total": 0, "percent": 0}
+        self.recent_logs: List[dict] = []
         self.recent_results: List[Dict[str, Any]] = []
         self.ws_clients: List[WebSocket] = []
         self.lock = threading.Lock()
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
 
-    def add_log(self, msg: str):
+    def add_log(self, event_name: str, msg: str):
         with self.lock:
-            self.recent_logs.append(msg)
+            self.recent_logs.append({"event": event_name, "message": msg})
             if len(self.recent_logs) > 300:
                 self.recent_logs.pop(0)
 
-    def add_result(self, res_dict: Dict[str, Any]):
+    def add_result(self, event_name: str, res_dict: Dict[str, Any]):
         with self.lock:
+            res_dict["event_name"] = event_name
             self.recent_results.append(res_dict)
             if len(self.recent_results) > 150:
                 self.recent_results.pop(0)
 
     async def broadcast(self, data: dict):
-        dead_clients = []
-        for ws in self.ws_clients:
+        with self.lock:
+            clients = list(self.ws_clients)
+        dead = []
+        for ws in clients:
             try:
                 await ws.send_json(data)
             except Exception:
-                dead_clients.append(ws)
-        for dead in dead_clients:
-            if dead in self.ws_clients:
-                self.ws_clients.remove(dead)
+                dead.append(ws)
+        if dead:
+            with self.lock:
+                for d in dead:
+                    if d in self.ws_clients:
+                        self.ws_clients.remove(d)
 
 state = AppState()
-try:
-    loop = asyncio.get_event_loop()
-except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+
+@app.on_event("startup")
+async def startup_event():
+    state.loop = asyncio.get_running_loop()
 
 def sync_broadcast(data: dict):
-    try:
-        asyncio.run_coroutine_threadsafe(state.broadcast(data), loop)
-    except Exception:
-        pass
+    if state.loop is None:
+        try:
+            state.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+    if state.loop and state.loop.is_running():
+        try:
+            asyncio.run_coroutine_threadsafe(state.broadcast(data), state.loop)
+        except Exception as e:
+            print("Broadcast error:", e)
 
 # --- API Endpoints ---
 
@@ -115,10 +126,10 @@ def get_config(event_name: Optional[str] = None):
             "current_event": name,
             "config": cfg.__dict__,
             "has_credentials": bool(find_service_account()) or (APP_DIR / "client_secret.json").exists() or (Path.cwd() / "client_secret.json").exists(),
-            "is_running": state.is_running,
-            "is_paused": state.is_paused,
-            "progress": state.progress,
-            "tabs": [],  # tab di-load terpisah via /api/sheets/connect
+            "is_running": bool(state.running_events.get(name)),
+            "is_paused": bool(state.paused_events.get(name)),
+            "progress": state.event_progress.get(name, {"done": 0, "total": 0, "percent": 0}),
+            "tabs": [],
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gagal memuat config: {str(e)}")
@@ -210,18 +221,18 @@ def test_gemini(payload: Dict[str, str]):
 
 @app.post("/api/process/start")
 def start_process(payload: Dict[str, str]):
-    if state.is_running:
-        return {"status": "already_running"}
-    
     event_name = payload.get("event_name")
     s = Store.load()
     name = event_name or s.last_event or (s.names()[0] if s.names() else "Event 1")
     cfg = s.config_for(name)
+
+    if state.running_events.get(name):
+        return {"status": "already_running", "event": name}
     
     if not cfg.spreadsheet_url and not cfg.spreadsheet_id:
         raise HTTPException(
             status_code=400,
-            detail="Spreadsheet belum diatur. Buka tab 'Pengaturan', isi URL Spreadsheet Google Sheets, klik 'Hubungkan', lalu 'Simpan Pengaturan Event'."
+            detail=f"Spreadsheet untuk event '{name}' belum diatur. Buka tab 'Pengaturan', isi URL Spreadsheet Google Sheets, klik 'Hubungkan', lalu 'Simpan Pengaturan Event'."
         )
     
     if not cfg.spreadsheet_id and cfg.spreadsheet_url:
@@ -240,13 +251,13 @@ def start_process(payload: Dict[str, str]):
         raise HTTPException(status_code=400, detail=f"Koneksi Google gagal: {str(e)}")
 
     def on_log(msg: str):
-        state.add_log(msg)
-        sync_broadcast({"type": "log", "message": msg})
+        state.add_log(name, msg)
+        sync_broadcast({"type": "log", "event_name": name, "message": msg})
 
     def on_progress(done: int, total: int):
         pct = int((done / total * 100)) if total > 0 else 0
-        state.progress = {"done": done, "total": total, "percent": pct}
-        sync_broadcast({"type": "progress", "done": done, "total": total, "percent": pct})
+        state.event_progress[name] = {"done": done, "total": total, "percent": pct}
+        sync_broadcast({"type": "progress", "event_name": name, "done": done, "total": total, "percent": pct})
 
     def on_result(res):
         ext_dict = None
@@ -271,14 +282,15 @@ def start_process(payload: Dict[str, str]):
             "note": res.note,
             "extracted": ext_dict,
         }
-        state.add_result(item)
-        sync_broadcast({"type": "result", "item": item})
+        state.add_result(name, item)
+        sync_broadcast({"type": "result", "event_name": name, "item": item})
 
     engine = Engine(cfg, sheets_client, drive_client, on_result=on_result, on_log=on_log, on_progress=on_progress)
-    state.active_engine = engine
-    state.is_running = True
-    state.is_paused = False
-    state.progress = {"done": 0, "total": 0, "percent": 0}
+    state.engines[name] = engine
+    state.running_events[name] = True
+    state.paused_events[name] = False
+    state.event_progress[name] = {"done": 0, "total": 0, "percent": 0}
+    sync_broadcast({"type": "status", "event_name": name, "is_running": True, "is_paused": False})
 
     def worker():
         try:
@@ -287,42 +299,51 @@ def start_process(payload: Dict[str, str]):
         except Exception as e:
             on_log(f"Error eksekusi: {e}")
         finally:
-            state.is_running = False
-            state.is_paused = False
-            state.active_engine = None
-            sync_broadcast({"type": "status", "is_running": False, "is_paused": False})
+            state.running_events[name] = False
+            state.paused_events[name] = False
+            state.engines.pop(name, None)
+            sync_broadcast({"type": "status", "event_name": name, "is_running": False, "is_paused": False})
 
     t = threading.Thread(target=worker, daemon=True)
-    state.engine_thread = t
+    state.threads[name] = t
     t.start()
-    return {"status": "started"}
+    return {"status": "started", "event": name}
 
 @app.post("/api/process/pause")
-def pause_process():
-    if state.active_engine and state.is_running:
-        state.active_engine.pause()
-        state.is_paused = True
-        sync_broadcast({"type": "status", "is_running": True, "is_paused": True})
-        return {"status": "paused"}
+def pause_process(payload: Dict[str, str] = None):
+    event_name = (payload or {}).get("event_name")
+    s = Store.load()
+    name = event_name or s.last_event
+    engine = state.engines.get(name)
+    if engine and state.running_events.get(name):
+        engine.pause()
+        state.paused_events[name] = True
+        sync_broadcast({"type": "status", "event_name": name, "is_running": True, "is_paused": True})
+        return {"status": "paused", "event": name}
     return {"status": "idle"}
 
 @app.post("/api/process/resume")
-def resume_process():
-    if state.active_engine and state.is_running:
-        state.active_engine.resume()
-        state.is_paused = False
-        sync_broadcast({"type": "status", "is_running": True, "is_paused": False})
-        return {"status": "resumed"}
+def resume_process(payload: Dict[str, str] = None):
+    event_name = (payload or {}).get("event_name")
+    s = Store.load()
+    name = event_name or s.last_event
+    engine = state.engines.get(name)
+    if engine and state.running_events.get(name):
+        engine.resume()
+        state.paused_events[name] = False
+        sync_broadcast({"type": "status", "event_name": name, "is_running": True, "is_paused": False})
+        return {"status": "resumed", "event": name}
     return {"status": "idle"}
 
 @app.post("/api/process/stop")
-def stop_process():
-    if state.active_engine and state.is_running:
-        state.active_engine.stop()
-        state.is_running = False
-        state.is_paused = False
-        sync_broadcast({"type": "status", "is_running": False, "is_paused": False})
-        return {"status": "stopping"}
+def stop_process(payload: Dict[str, str] = None):
+    event_name = (payload or {}).get("event_name")
+    s = Store.load()
+    name = event_name or s.last_event
+    engine = state.engines.get(name)
+    if engine:
+        engine.stop()
+        return {"status": "stopping", "event": name}
     return {"status": "idle"}
 
 # --- Review Manual Queue ---
@@ -416,25 +437,49 @@ async def upload_credential(file: UploadFile = File(...)):
     else:
         raise HTTPException(status_code=400, detail="Format JSON tidak dikenali (harus service account atau OAuth client)")
 
+# Drive Image Proxy for Web UI
+@app.get("/api/drive/image")
+def get_drive_image(file_id: str):
+    if not file_id:
+        raise HTTPException(status_code=400, detail="file_id wajib diisi")
+    try:
+        drive_client = _make_drive()
+        data, mime = drive_client.fetch(file_id)
+        from fastapi.responses import Response
+        return Response(content=data, media_type=mime)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # WebSocket Endpoint for Realtime Dashboard
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
+    if state.loop is None:
+        try:
+            state.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
     await ws.accept()
-    state.ws_clients.append(ws)
+    with state.lock:
+        state.ws_clients.append(ws)
     await ws.send_json({
         "type": "init",
-        "is_running": state.is_running,
-        "is_paused": state.is_paused,
-        "progress": state.progress,
-        "recent_logs": state.recent_logs[-50:],
+        "running_events": state.running_events,
+        "paused_events": state.paused_events,
+        "event_progress": state.event_progress,
+        "recent_logs": [l["message"] for l in state.recent_logs[-50:]],
         "recent_results": state.recent_results[-30:],
     })
     try:
         while True:
             await ws.receive_text()
     except WebSocketDisconnect:
-        if ws in state.ws_clients:
-            state.ws_clients.remove(ws)
+        with state.lock:
+            if ws in state.ws_clients:
+                state.ws_clients.remove(ws)
+    except Exception:
+        with state.lock:
+            if ws in state.ws_clients:
+                state.ws_clients.remove(ws)
 
 # Web UI Main HTML
 @app.get("/", response_class=HTMLResponse)

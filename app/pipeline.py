@@ -154,6 +154,7 @@ class Engine:
         self._reprocess_rows: set[int] = set()   # baris yang akan diproses ulang: refnya tidak dihitung sebagai "sudah dipakai"
         self._handled: set[int] = set()   # baris yang sudah diproses pada proses ini (agar tidak berulang)
         self._skip: set[int] = set()   # baris yang gagal secara teknis pada proses ini
+        self.seen_links: dict[str, int] = {}  # file_id -> row number (untuk deteksi bukti kembar)
         self._marker = ""
 
     @property
@@ -193,6 +194,10 @@ class Engine:
                 ref, dt, ht = decode_ref(r.ref)
                 if ref:
                     self.refs.claim(ref, r.row, dt, ht)
+            if (r.check or (r.note.strip() and not r.note.strip().startswith("[diproses"))) and r.row not in self._reprocess_rows:
+                fids = extract_file_ids(r.link_raw)
+                if fids and fids[0] not in self.seen_links:
+                    self.seen_links[fids[0]] = r.row
 
     # ---- klaim blok ----
     def _claim(self, snap: list[SheetRow]) -> tuple[bool, list[SheetRow]]:
@@ -267,7 +272,12 @@ class Engine:
         if len(ids) > 1:
             verdict.add("MULTI", f"ada {len(ids)} file bukti, hanya yang pertama diperiksa")
         ref, dup_of = "", None
-        if ext.ref:
+        # Cek duplikat file ID Google Drive (misal bukti sama diunggah ulang)
+        dup_link = self.seen_links.get(ids[0]) if ids else None
+        if dup_link is not None and dup_link != row.row:
+            dup_of = dup_link
+            verdict.add("DUP_REF", f"file bukti sama persis dengan baris {dup_of}")
+        elif ext.ref:
             # baris yang sudah ditolak tidak boleh "memegang" bukti (agar tidak meracuni baris lain)
             if verdict.status == INVALID:
                 dup_of = self.refs.find(ext.ref, row.row, ext.dt, ext.has_time)
@@ -277,6 +287,8 @@ class Engine:
                 verdict.add("DUP_REF", f"bukti sama dengan baris {dup_of} (referensi, tanggal, dan jam sama)")
             elif verdict.status != INVALID:
                 ref = encode_ref(ext.ref, ext.dt, ext.has_time)
+        if ids and verdict.status != INVALID and dup_of is None:
+            self.seen_links[ids[0]] = row.row
         return RowResult(row, verdict, ext, build_note(verdict.status, verdict, ext, self.officer), ref, dup_of=dup_of)
 
     def _gemini_only(self, data: bytes, mime: str) -> Extracted:

@@ -229,7 +229,7 @@
       <div class="card-title">
         Antrean Review Bukti Transfer
         <div class="btn-group">
-          <select id="selReviewMode" class="event-select" style="max-width:280px;">
+          <select id="selReviewMode" class="event-select" style="max-width:280px;" onchange="loadReview()">
             <option value="manual">Perlu Diputuskan (CEK MANUAL)</option>
             <option value="invalid">TIDAK VALID</option>
             <option value="valid">VALID</option>
@@ -795,11 +795,11 @@ async function doStart() {
 
 async function doPause() {
   const url = state.isPaused ? '/api/process/resume' : '/api/process/pause';
-  await fetch(url, { method: 'POST' });
+  await fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({event_name: state.currentEvent}) });
 }
 
 async function doStop() {
-  await fetch('/api/process/stop', { method: 'POST' });
+  await fetch('/api/process/stop', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({event_name: state.currentEvent}) });
 }
 
 // =========================================================
@@ -822,6 +822,20 @@ function addResultRow(item) {
   body.insertBefore(tr, body.firstChild);
 }
 
+function extractFid(link) {
+  if (!link) return '';
+  const m1 = link.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
+  if (m1) return m1[1];
+  const m2 = link.match(/\/d\/([A-Za-z0-9_-]{20,})/);
+  return m2 ? m2[1] : '';
+}
+
+function previewImage(fid, title) {
+  $('modalTitle').textContent = title || 'Bukti Transfer';
+  $('modalImg').src = `/api/drive/image?file_id=${encodeURIComponent(fid)}`;
+  $('imgModal').style.display = 'flex';
+}
+
 // =========================================================
 // REVIEW MANUAL
 // =========================================================
@@ -836,13 +850,18 @@ async function loadReview() {
     body.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Tidak ada data dalam antrean mode "${mode}".</td></tr>`;
     return;
   }
-  body.innerHTML = d.items.map(r2 => `
+  body.innerHTML = d.items.map(r2 => {
+    const fid = extractFid(r2.link);
+    return `
     <tr>
       <td><strong>#${r2.row}</strong></td>
       <td>${r2.nama || '–'}</td>
-      <td>${rp(r2.nominal)}</td>
+      <td>${typeof r2.nominal === 'number' ? rp(r2.nominal) : (r2.nominal || '–')}</td>
       <td style="font-size:12px;">${r2.rekening || '–'}</td>
-      <td><a href="${r2.link || '#'}" target="_blank" rel="noopener" style="color:#818cf8;">Buka ↗</a></td>
+      <td>
+        <a href="${r2.link || '#'}" target="_blank" rel="noopener" style="color:#818cf8;display:inline-block;margin-bottom:4px;">Buka Drive ↗</a>
+        ${fid ? `<br><button class="btn btn-ghost btn-sm" onclick="previewImage('${fid}', '${(r2.nama||'').replace(/'/g,"\\'")} (#${r2.row})')">👁️ Lihat Bukti</button>` : ''}
+      </td>
       <td style="font-size:12px;color:var(--muted);max-width:260px;">${r2.note || '–'}</td>
       <td>
         <div class="btn-group">
@@ -851,7 +870,8 @@ async function loadReview() {
         </div>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function sendDecision(row, note, ok) {
@@ -875,15 +895,23 @@ function connectWS() {
   ws.onopen = () => { addLog('Koneksi realtime aktif.', 'info'); };
   ws.onmessage = e => {
     const msg = JSON.parse(e.data);
-    if (msg.type === 'log') addLog(msg.message);
-    else if (msg.type === 'progress') {
-      $('progText').textContent = `Memproses ${msg.done} / ${msg.total} baris`;
-      $('progPct').textContent = `${msg.percent}%`;
-      $('progFill').style.width = `${msg.percent}%`;
-    } else if (msg.type === 'result') addResultRow(msg.item);
-    else if (msg.type === 'status') setStatus(msg.is_running, msg.is_paused);
-    else if (msg.type === 'init') {
-      setStatus(msg.is_running, msg.is_paused);
+    const forThisEvent = !msg.event_name || msg.event_name === state.currentEvent;
+    if (msg.type === 'log') {
+      if (forThisEvent) addLog(msg.message);
+    } else if (msg.type === 'progress') {
+      if (forThisEvent) {
+        $('progText').textContent = `Memproses ${msg.done} / ${msg.total} baris`;
+        $('progPct').textContent = `${msg.percent}%`;
+        $('progFill').style.width = `${msg.percent}%`;
+      }
+    } else if (msg.type === 'result') {
+      if (forThisEvent) addResultRow(msg.item);
+    } else if (msg.type === 'status') {
+      if (forThisEvent) setStatus(msg.is_running, msg.is_paused);
+    } else if (msg.type === 'init') {
+      const isRun = Boolean(msg.running_events && msg.running_events[state.currentEvent]);
+      const isPause = Boolean(msg.paused_events && msg.paused_events[state.currentEvent]);
+      setStatus(isRun, isPause);
       (msg.recent_logs || []).forEach(l => addLog(l));
       (msg.recent_results || []).forEach(addResultRow);
     }
@@ -900,5 +928,19 @@ window.onload = () => {
   connectWS();
 };
 </script>
+
+<!-- Lightbox Modal untuk Preview Bukti Transfer -->
+<div id="imgModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;align-items:center;justify-content:center;flex-direction:column;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+    <div style="padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
+      <span id="modalTitle" style="font-weight:700;font-size:14px;">Bukti Transfer</span>
+      <button class="btn btn-ghost btn-sm" onclick="$('imgModal').style.display='none'">✕ Tutup</button>
+    </div>
+    <div style="padding:16px;overflow:auto;display:flex;align-items:center;justify-content:center;background:#030712;min-height:300px;">
+      <img id="modalImg" src="" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:6px;" alt="Bukti Transfer" />
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
