@@ -379,9 +379,15 @@ async def websocket_endpoint(ws: WebSocket):
 @app.get("/", response_class=HTMLResponse)
 def index():
     html_file = Path(__file__).parent / "web_static" / "index.html"
-    if html_file.exists():
-        return html_file.read_text(encoding="utf-8")
-    return "<h1>Web UI file tidak ditemukan</h1>"
+    content = html_file.read_text(encoding="utf-8") if html_file.exists() else "<h1>Web UI tidak ditemukan</h1>"
+    return HTMLResponse(
+        content=content,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
 
 if __name__ == "__main__":
     import uvicorn
