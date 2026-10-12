@@ -3,782 +3,862 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cek Bukti TF e-guru.id - Web Dashboard</title>
+  <title>Cek Bukti TF e-guru.id</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: rgba(22, 30, 49, 0.7);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --primary: #4f46e5;
-      --primary-hover: #4338ca;
+      --bg: #0b0f1a;
+      --surface: #111827;
+      --surface2: rgba(30,41,59,0.8);
+      --border: rgba(255,255,255,0.08);
+      --primary: #6366f1;
+      --primary-dim: rgba(99,102,241,0.15);
       --accent: #06b6d4;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-      --radius: 14px;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --r: 12px;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: radial-gradient(circle at top left, #1e1b4b 0%, var(--bg) 60%);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* Header */
-    header {
-      padding: 18px 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--card-border);
-      background: rgba(11, 15, 25, 0.8);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .brand-logo {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--accent), var(--primary));
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 18px;
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
-    }
-    .brand-title {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-    .brand-badge {
-      font-size: 11px;
-      font-weight: 600;
-      background: rgba(79, 70, 229, 0.25);
-      color: #818cf8;
-      border: 1px solid rgba(79, 70, 229, 0.4);
-      padding: 3px 8px;
-      border-radius: 20px;
-      text-transform: uppercase;
-    }
+    /* HEADER */
+    header { padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(11,15,26,0.95); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 200; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .brand-logo { width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent), var(--primary)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,.4); }
+    .brand-title { font-size: 16px; font-weight: 700; white-space: nowrap; }
+    .badge { font-size: 10px; font-weight: 700; background: var(--primary-dim); color: #818cf8; border: 1px solid rgba(99,102,241,.35); padding: 2px 8px; border-radius: 20px; text-transform: uppercase; white-space: nowrap; }
 
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .event-selector {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
-      color: var(--text);
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      outline: none;
-    }
+    /* EVENT BAR */
+    .event-bar { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
+    .event-select { background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; outline: none; max-width: 240px; }
+    .icon-btn { background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--muted); padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all .15s; }
+    .icon-btn:hover { background: rgba(255,255,255,.12); color: var(--text); }
 
-    /* Navigation Tabs */
-    .tabs-nav {
-      display: flex;
-      gap: 8px;
-      padding: 12px 32px;
-      background: rgba(15, 23, 42, 0.4);
-      border-bottom: 1px solid var(--card-border);
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .tab-btn.active {
-      background: rgba(79, 70, 229, 0.15);
-      color: #818cf8;
-      border: 1px solid rgba(79, 70, 229, 0.3);
-    }
-    .tab-btn:hover:not(.active) {
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.03);
-    }
+    /* STATUS PILL */
+    .status-pill { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
+    .pill-idle { background: rgba(148,163,184,.1); border-color: rgba(148,163,184,.2); color: var(--muted); }
+    .pill-running { background: rgba(99,102,241,.15); border-color: rgba(99,102,241,.3); color: #818cf8; }
+    .pill-paused { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.25); color: var(--warning); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .dot.pulse { animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
 
-    /* Main Container */
-    main {
-      flex: 1;
-      padding: 28px 32px;
-      max-width: 1500px;
-      margin: 0 auto;
-      width: 100%;
-    }
+    /* TABS */
+    nav.tabs { display: flex; gap: 4px; padding: 10px 28px; background: rgba(15,23,42,.5); border-bottom: 1px solid var(--border); }
+    .tab-btn { padding: 8px 18px; border: none; background: transparent; color: var(--muted); font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 8px; display: flex; align-items: center; gap: 7px; transition: all .15s; }
+    .tab-btn.active { background: var(--primary-dim); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
+    .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,.04); }
 
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+    /* LAYOUT */
+    main { flex:1; padding: 24px 28px; max-width: 1600px; margin: 0 auto; width: 100%; }
+    .tab-pane { display: none; animation: fadeUp .2s ease; }
+    .tab-pane.active { display: block; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* CARD */
+    .card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; backdrop-filter: blur(12px); box-shadow: 0 8px 24px rgba(0,0,0,.2); margin-bottom: 20px; }
+    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .card-title .sub { font-size: 12px; color: var(--muted); font-weight: 500; }
 
-    /* Cards */
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 24px;
-      backdrop-filter: blur(16px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-      margin-bottom: 24px;
-    }
-    .card-title {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+    /* BUTTONS */
+    .btn { padding: 9px 20px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; border: none; transition: all .15s; font-family: inherit; white-space: nowrap; }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), #818cf8); color: #fff; box-shadow: 0 3px 12px rgba(99,102,241,.35); }
+    .btn-primary:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-warning { background: var(--warning); color: #111; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-ghost { background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--text); }
+    .btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,.1); }
+    .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 7px; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
 
-    /* Grid Layouts */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
+    /* PROGRESS */
+    .progress-wrap { margin-top: 16px; }
+    .progress-info { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .progress-track { height: 8px; background: rgba(255,255,255,.07); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); width: 0; transition: width .4s ease; border-radius: 4px; }
 
-    /* Controls Bar */
-    .control-panel {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    .btn-group {
-      display: flex;
-      gap: 12px;
-    }
-    .btn {
-      padding: 10px 22px;
-      border-radius: 9px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border: none;
-      transition: all 0.2s ease;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--primary), #6366f1);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
-    }
-    .btn-primary:hover { opacity: 0.95; transform: translateY(-1px); }
-    .btn-warning {
-      background: var(--warning);
-      color: #111;
-    }
-    .btn-danger {
-      background: var(--danger);
-      color: #fff;
-    }
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text);
-      border: 1px solid var(--card-border);
-    }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    /* CONSOLE */
+    .console { background: #060810; border: 1px solid rgba(255,255,255,.05); border-radius: 10px; padding: 14px; height: 300px; overflow-y: auto; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 12.5px; line-height: 1.65; color: #cbd5e1; scroll-behavior: smooth; }
+    .log { word-break: break-all; }
+    .log.ok { color: #34d399; }
+    .log.err { color: #f87171; }
+    .log.warn { color: #fbbf24; }
+    .log.info { color: #93c5fd; }
 
-    /* Progress bar */
-    .progress-wrapper {
-      margin-top: 18px;
-    }
-    .progress-bar-bg {
-      height: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 6px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--primary));
-      width: 0%;
-      transition: width 0.3s ease;
-      border-radius: 6px;
-    }
+    /* TABLE */
+    .tbl-wrap { overflow-x: auto; max-height: 460px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: rgba(15,23,42,.95); padding: 11px 14px; font-weight: 700; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1; }
+    td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,.02); }
 
-    /* Logs & Terminal */
-    .console-box {
-      background: #060911;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 10px;
-      padding: 16px;
-      height: 320px;
-      overflow-y: auto;
-      font-family: 'JetBrains Mono', monospace, Consolas;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #cbd5e1;
-    }
-    .log-line { margin-bottom: 4px; word-break: break-all; }
-    .log-line.error { color: #f87171; }
-    .log-line.success { color: #34d399; }
-    .log-line.warn { color: #fbbf24; }
+    /* BADGE */
+    .bx { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
+    .bx-v { background: rgba(16,185,129,.18); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+    .bx-i { background: rgba(239,68,68,.18); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+    .bx-m { background: rgba(245,158,11,.18); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+    .bx-g { background: rgba(148,163,184,.12); color: var(--muted); border: 1px solid var(--border); }
 
-    /* Tables */
-    .table-container {
-      overflow-x: auto;
-      max-height: 480px;
+    /* FORM */
+    .fgrp { margin-bottom: 15px; }
+    .fgrp label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+    .fgrp input, .fgrp select, .fgrp textarea {
+      width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none; transition: border-color .15s; font-family: inherit;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 13px;
-    }
-    th {
-      background: rgba(15, 23, 42, 0.9);
-      padding: 12px 14px;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--card-border);
-      position: sticky;
-      top: 0;
-    }
-    td {
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-    }
+    .fgrp input:focus, .fgrp select:focus { border-color: var(--primary); }
+    .fgrp input[type="checkbox"] { width: auto; }
+    .frow { display: flex; gap: 12px; }
+    .frow > .fgrp { flex: 1; min-width: 0; }
+    .helper { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-    /* Badges */
-    .badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-block;
-    }
-    .badge-valid { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-invalid { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge-manual { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    /* DIVIDER */
+    .divider { height: 1px; background: var(--border); margin: 18px 0; }
 
-    /* Form Fields */
-    .form-group {
-      margin-bottom: 18px;
+    /* TOAST */
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast-item { background: var(--surface); border: 1px solid var(--border); padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; max-width: 340px; animation: slideIn .25s ease; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+    .toast-item.ok { border-color: rgba(16,185,129,.4); color: #34d399; }
+    .toast-item.err { border-color: rgba(239,68,68,.4); color: #f87171; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ALERT */
+    .alert { padding: 12px 16px; border-radius: 9px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+    .alert-warn { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); color: var(--warning); }
+    .alert-info { background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.25); color: #818cf8; }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      header { gap: 8px; }
+      .brand-title { display: none; }
     }
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 7px;
-    }
-    input[type="text"], input[type="number"], select {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--card-border);
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input[type="text"]:focus, select:focus {
-      border-color: var(--primary);
-    }
-    .form-row {
-      display: flex;
-      gap: 16px;
-    }
-    .form-row > div { flex: 1; }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <div class="brand-logo">TF</div>
-      <div>
-        <div class="brand-title">Cek Bukti TF e-guru.id</div>
-      </div>
-      <span class="brand-badge">Server Web VPS</span>
-    </div>
-    <div class="top-actions">
-      <label style="margin: 0; font-size: 12px; color: var(--text-muted);">Event Aktif:</label>
-      <select id="eventSelect" class="event-selector" onchange="changeEvent(this.value)">
-        <option>Memuat...</option>
-      </select>
-      <button class="btn btn-secondary" onclick="addNewEvent()" style="padding: 6px 12px; font-size: 13px;">+ Event Baru</button>
-    </div>
-  </header>
+<div id="toast"></div>
 
-  <div class="tabs-nav">
-    <button class="tab-btn active" onclick="switchTab('tab-process')">⚡ Proses & Monitor</button>
-    <button class="tab-btn" onclick="switchTab('tab-review')">🔍 Review Manual</button>
-    <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Pengaturan & Kunci</button>
+<header>
+  <div class="brand">
+    <div class="brand-logo">TF</div>
+    <span class="brand-title">Cek Bukti TF e-guru.id</span>
+    <span class="badge">Web Edition</span>
   </div>
 
-  <main>
-    <!-- TAB 1: PROSES & MONITOR -->
-    <div id="tab-process" class="tab-content active">
-      <div class="card">
-        <div class="control-panel">
-          <div>
-            <div style="font-size: 18px; font-weight: 700;" id="eventDisplayName">Event 1</div>
-            <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;" id="eventSheetUrl">Spreadsheet belum diatur</div>
-          </div>
-          <div class="btn-group">
-            <button id="btnStart" class="btn btn-primary" onclick="startProcess()">▶ Mulai Cek</button>
-            <button id="btnPause" class="btn btn-warning" onclick="pauseProcess()" disabled>⏸ Jeda</button>
-            <button id="btnStop" class="btn btn-danger" onclick="stopProcess()" disabled>⏹ Berhenti</button>
-          </div>
-        </div>
+  <div class="event-bar">
+    <select id="selEvent" class="event-select" onchange="onEventChange(this.value)">
+      <option>Memuat...</option>
+    </select>
+    <button class="icon-btn" title="Event baru" onclick="doAddEvent()">＋</button>
+    <button class="icon-btn" title="Ganti nama event" onclick="doRenameEvent()">✏️</button>
+    <button class="icon-btn" title="Hapus event" onclick="doDeleteEvent()">🗑️</button>
+  </div>
 
-        <div class="progress-wrapper">
-          <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;">
-            <span id="progressText">Siap memproses.</span>
-            <span id="progressPercent">0%</span>
-          </div>
-          <div class="progress-bar-bg">
-            <div id="progressFill" class="progress-bar-fill"></div>
-          </div>
+  <div id="statusPill" class="status-pill pill-idle">
+    <div class="dot"></div><span id="statusText">Idle</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="t-process" onclick="switchTab(this, 't-process')">⚡ Proses &amp; Monitor</button>
+  <button class="tab-btn" data-tab="t-review" onclick="switchTab(this, 't-review')">🔍 Review Manual</button>
+  <button class="tab-btn" data-tab="t-settings" onclick="switchTab(this, 't-settings')">⚙️ Pengaturan</button>
+  <button class="tab-btn" data-tab="t-credentials" onclick="switchTab(this, 't-credentials')">🔑 Kunci &amp; API</button>
+</nav>
+
+<main>
+
+  <!-- ========== TAB PROSES ========== -->
+  <div id="t-process" class="tab-pane active">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+        <div>
+          <div style="font-size:18px;font-weight:800;" id="dispEventName">–</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="dispSheetUrl">Spreadsheet belum dikonfigurasi</div>
+        </div>
+        <div class="btn-group">
+          <button id="btnStart" class="btn btn-primary" onclick="doStart()">▶ Mulai Cek</button>
+          <button id="btnPause" class="btn btn-warning" onclick="doPause()" disabled>⏸ Jeda</button>
+          <button id="btnStop"  class="btn btn-danger"  onclick="doStop()"  disabled>⏹ Berhenti</button>
         </div>
       </div>
-
-      <div class="grid-2">
-        <!-- Live Hasil Tabel -->
-        <div class="card">
-          <div class="card-title">
-            <span>Hasil Terakhir</span>
-            <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);" id="resultCount">0 data</span>
-          </div>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Baris</th>
-                  <th>Nama</th>
-                  <th>Status</th>
-                  <th>Nominal Terbaca</th>
-                  <th>Catatan</th>
-                </tr>
-              </thead>
-              <tbody id="resultBody">
-                <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Belum ada hasil yang diproses.</td></tr>
-              </tbody>
-            </table>
-          </div>
+      <div class="progress-wrap">
+        <div class="progress-info">
+          <span id="progText">Siap memproses.</span>
+          <span id="progPct">0%</span>
         </div>
-
-        <!-- Terminal Log -->
-        <div class="card">
-          <div class="card-title">
-            <span>Log Aktivitas Server</span>
-            <button class="btn btn-secondary" onclick="clearLogs()" style="padding: 4px 10px; font-size: 11px;">Bersihkan</button>
-          </div>
-          <div id="consoleBox" class="console-box">
-            <div class="log-line">[Sistem] Terhubung ke server web bukti transfer.</div>
-          </div>
-        </div>
+        <div class="progress-track"><div id="progFill" class="progress-fill"></div></div>
       </div>
     </div>
 
-    <!-- TAB 2: REVIEW MANUAL -->
-    <div id="tab-review" class="tab-content">
+    <div class="grid-2">
       <div class="card">
         <div class="card-title">
-          <span>Antrean Review Bukti Transfer</span>
-          <div style="display: flex; gap: 10px;">
-            <select id="reviewMode" onchange="loadReviewQueue()" style="width: auto; padding: 6px 12px;">
-              <option value="manual">Perlu Diputuskan (CEK MANUAL)</option>
-              <option value="invalid">TIDAK VALID</option>
-              <option value="valid">VALID</option>
-            </select>
-            <button class="btn btn-secondary" onclick="loadReviewQueue()" style="padding: 6px 12px;">🔄 Segarkan</button>
-          </div>
+          Hasil Terakhir
+          <span class="sub" id="resultCount">0 baris</span>
         </div>
-        <div class="table-container">
+        <div class="tbl-wrap">
           <table>
-            <thead>
-              <tr>
-                <th>Baris</th>
-                <th>Nama</th>
-                <th>Nominal Target</th>
-                <th>Bank/Rekening</th>
-                <th>Link Bukti</th>
-                <th>Catatan Saat Ini</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="reviewBody">
-              <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Memuat antrean review...</td></tr>
-            </tbody>
+            <thead><tr><th>#</th><th>Nama</th><th>Status</th><th>Nominal Terbaca</th><th>Catatan</th></tr></thead>
+            <tbody id="tblResult"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Belum ada hasil.</td></tr></tbody>
           </table>
         </div>
       </div>
-    </div>
 
-    <!-- TAB 3: PENGATURAN -->
-    <div id="tab-settings" class="tab-content">
-      <div class="grid-2">
-        <!-- Pengaturan Google & Spreadsheet -->
-        <div class="card">
-          <div class="card-title">1. Spreadsheet & Event</div>
-          <div class="form-group">
-            <label>URL Spreadsheet Google Form:</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="cfgSpreadsheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." />
-              <button class="btn btn-secondary" onclick="testSheetConnect()">Hubungkan</button>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Nama Petugas (Anda):</label>
-              <input type="text" id="cfgOfficer" placeholder="Budi" />
-            </div>
-            <div class="form-group">
-              <label>Toleransi Nominal (Rp):</label>
-              <input type="number" id="cfgAmountTolerance" value="6500" />
-            </div>
-          </div>
-          <div class="card-title" style="margin-top: 10px; font-size: 15px;">Pengaturan Kolom</div>
-          <div class="form-row">
-            <div class="form-group"><label>Kolom Bukti (Link):</label><input type="text" id="cfgColLink" value="H" /></div>
-            <div class="form-group"><label>Kolom Nominal:</label><input type="text" id="cfgColNominal" value="G" /></div>
-            <div class="form-group"><label>Kolom Bank/Rekening:</label><input type="text" id="cfgColRekening" value="F" /></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Kolom Ceklis:</label><input type="text" id="cfgColCheck" value="I" /></div>
-            <div class="form-group"><label>Kolom Catatan:</label><input type="text" id="cfgColNote" value="K" /></div>
-            <div class="form-group"><label>Kolom Referensi:</label><input type="text" id="cfgColRef" value="L" /></div>
-          </div>
-          <button class="btn btn-primary" onclick="saveCurrentConfig()">💾 Simpan Pengaturan Event</button>
+      <div class="card">
+        <div class="card-title">
+          Log Aktivitas
+          <button class="btn btn-ghost btn-sm" onclick="clearLog()">Bersihkan</button>
         </div>
-
-        <!-- Pengaturan Kredensial & Gemini AI -->
-        <div class="card">
-          <div class="card-title">2. Kunci Google & Gemini AI</div>
-          <div class="form-group">
-            <label>File Kunci Google (service_account.json / client_secret.json):</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="file" id="fileCredential" accept=".json" style="background: transparent; color: var(--text);" />
-              <button class="btn btn-secondary" onclick="uploadCredentialFile()">Unggah Kunci</button>
-            </div>
-            <small style="color: var(--text-muted); display: block; margin-top: 4px;" id="credStatusText">Memeriksa kunci...</small>
-          </div>
-          <div class="form-group" style="margin-top: 20px;">
-            <label>API Key Google Gemini:</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="cfgGeminiKey" placeholder="AIzaSy..." />
-              <button class="btn btn-secondary" onclick="testGeminiKey()">Tes Gemini</button>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Model Gemini:</label>
-              <input type="text" id="cfgGeminiModel" value="gemini-3.5-flash-lite" />
-            </div>
-            <div class="form-group">
-              <label>Mode Akun Gemini:</label>
-              <select id="cfgGeminiPaid">
-                <option value="false">Gratis (13 req/menit)</option>
-                <option value="true">Berbayar (120 req/menit)</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn btn-primary" onclick="saveCurrentConfig()">💾 Simpan Kunci & AI</button>
-        </div>
+        <div id="console" class="console"><div class="log info">[Sistem] Terhubung ke server.</div></div>
       </div>
     </div>
-  </main>
+  </div>
 
-  <script>
-    let currentConfig = {};
-    let currentEvent = "";
-    let ws = null;
+  <!-- ========== TAB REVIEW ========== -->
+  <div id="t-review" class="tab-pane">
+    <div class="card">
+      <div class="card-title">
+        Antrean Review Bukti Transfer
+        <div class="btn-group">
+          <select id="selReviewMode" class="event-select" style="max-width:280px;">
+            <option value="manual">Perlu Diputuskan (CEK MANUAL)</option>
+            <option value="invalid">TIDAK VALID</option>
+            <option value="valid">VALID</option>
+            <option value="all">Semua Hasil</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadReview()">🔄 Muat Ulang</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Nama</th><th>Nominal Target</th><th>Rekening</th><th>Link Bukti</th><th>Status Saat Ini</th><th>Aksi</th></tr></thead>
+          <tbody id="tblReview"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Klik "Muat Ulang" untuk melihat antrean.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      document.getElementById(tabId).classList.add('active');
-      if (tabId === 'tab-review') loadReviewQueue();
+  <!-- ========== TAB PENGATURAN ========== -->
+  <div id="t-settings" class="tab-pane">
+    <div class="grid-2">
+      <!-- Pengaturan Event -->
+      <div class="card">
+        <div class="card-title">Pengaturan Event: <span id="cfgEventLabel" style="color:#818cf8;">–</span></div>
+
+        <div class="fgrp">
+          <label>URL Spreadsheet Google Sheets</label>
+          <div style="display:flex;gap:8px;">
+            <input id="cfgUrl" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." />
+            <button class="btn btn-ghost btn-sm" onclick="testSheetConn()">Hubungkan</button>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fgrp">
+            <label>Tab / Judul Sheet</label>
+            <select id="cfgSheetSel"><option value="">– Pilih setelah hubungkan –</option></select>
+          </div>
+          <div class="fgrp">
+            <label>Baris Mulai Data</label>
+            <input id="cfgFirstRow" type="number" value="2" min="1" />
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fgrp"><label>Dari Baris (0=semua)</label><input id="cfgRowFrom" type="number" value="0" min="0" /></div>
+          <div class="fgrp"><label>Sampai Baris (0=semua)</label><input id="cfgRowTo" type="number" value="0" min="0" /></div>
+        </div>
+
+        <div class="divider"></div>
+        <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">Pemetaan Kolom</div>
+
+        <div class="frow">
+          <div class="fgrp"><label>Kolom Bukti (Link)</label><input id="cfgColLink" type="text" value="H" maxlength="3" /></div>
+          <div class="fgrp"><label>Kolom Nominal</label><input id="cfgColNominal" type="text" value="G" maxlength="3" /></div>
+          <div class="fgrp"><label>Kolom Bank/Rekening</label><input id="cfgColRekening" type="text" value="F" maxlength="3" /></div>
+        </div>
+        <div class="frow">
+          <div class="fgrp"><label>Kolom Ceklis</label><input id="cfgColCheck" type="text" value="I" maxlength="3" /></div>
+          <div class="fgrp"><label>Kolom Catatan</label><input id="cfgColNote" type="text" value="K" maxlength="3" /></div>
+          <div class="fgrp"><label>Kolom Referensi</label><input id="cfgColRef" type="text" value="L" maxlength="3" /></div>
+        </div>
+        <div class="frow">
+          <div class="fgrp"><label>Kolom Nama Peserta</label><input id="cfgColNama" type="text" value="C" maxlength="3" /></div>
+          <div class="fgrp"><label>Kolom Timestamp Form</label><input id="cfgColTimestamp" type="text" value="A" maxlength="3" /></div>
+        </div>
+
+        <div class="divider"></div>
+        <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">Aturan Validasi</div>
+
+        <div class="frow">
+          <div class="fgrp">
+            <label>Toleransi Nominal (±Rp)</label>
+            <input id="cfgTolerance" type="number" value="6500" min="0" />
+            <div class="helper">Selisih nominal yang masih diterima (mis. biaya admin)</div>
+          </div>
+          <div class="fgrp">
+            <label>Donasi Minimal (Rp)</label>
+            <input id="cfgMinAmount" type="number" value="0" min="0" />
+            <div class="helper">0 = tanpa batas minimal</div>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fgrp">
+            <label>Tanggal Minimal Bukti</label>
+            <input id="cfgMinDate" type="date" />
+            <div class="helper">Kosong = tidak dipakai. Inklusif (tanggal sama = diterima)</div>
+          </div>
+          <div class="fgrp">
+            <label>Mode Ulang Proses</label>
+            <select id="cfgReprocess">
+              <option value="none">Lanjutkan saja (default)</option>
+              <option value="manual">Ulangi juga baris CEK MANUAL</option>
+              <option value="auto">Ulangi SEMUA hasil otomatis</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="saveEventConfig()">💾 Simpan Pengaturan Event</button>
+      </div>
+
+      <!-- Pengaturan Umum -->
+      <div class="card">
+        <div class="card-title">Pengaturan Umum (Semua Event)</div>
+
+        <div class="fgrp">
+          <label>Nama Petugas (Anda)</label>
+          <input id="cfgOfficer" type="text" placeholder="Nama Anda" />
+        </div>
+
+        <div class="frow">
+          <div class="fgrp">
+            <label>Jumlah Worker (Thread)</label>
+            <input id="cfgWorkers" type="number" value="3" min="1" max="20" />
+          </div>
+          <div class="fgrp">
+            <label>Ukuran Blok Klaim Baris</label>
+            <input id="cfgBlockSize" type="number" value="50" min="1" />
+          </div>
+          <div class="fgrp">
+            <label>TTL Klaim (menit)</label>
+            <input id="cfgClaimTtl" type="number" value="30" min="5" />
+          </div>
+        </div>
+
+        <div class="fgrp">
+          <label>Threshold Konfiden OCR (%)</label>
+          <input id="cfgOcrConf" type="number" value="75" min="0" max="100" step="1" />
+          <div class="helper">Confidence Tesseract minimum agar hasil diterima langsung</div>
+        </div>
+
+        <button class="btn btn-primary" onclick="saveGlobalConfig()">💾 Simpan Pengaturan Umum</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TAB KUNCI & API ========== -->
+  <div id="t-credentials" class="tab-pane">
+    <div class="grid-2">
+      <!-- Kunci Google -->
+      <div class="card">
+        <div class="card-title">Kunci Google (Sheets &amp; Drive)</div>
+
+        <div id="credStatus" class="alert alert-warn">⚠️ Belum ada kunci Google yang aktif.</div>
+
+        <div class="fgrp">
+          <label>Pilih File Kunci (.json)</label>
+          <input id="fileKey" type="file" accept=".json" style="color:var(--text);background:transparent;border:0;padding:0;" />
+          <div class="helper">File service_account.json (disarankan) atau client_secret.json (OAuth)</div>
+        </div>
+        <button class="btn btn-primary" onclick="uploadKey()">⬆️ Unggah Kunci</button>
+
+        <div class="divider"></div>
+
+        <div class="fgrp">
+          <label>Test Koneksi Spreadsheet</label>
+          <div style="display:flex;gap:8px;">
+            <input id="testUrl" type="text" placeholder="URL Spreadsheet..." />
+            <button class="btn btn-ghost btn-sm" onclick="testSheetConn()">Tes</button>
+          </div>
+        </div>
+        <div id="sheetConnResult" style="font-size:13px;color:var(--muted);"></div>
+      </div>
+
+      <!-- Gemini AI -->
+      <div class="card">
+        <div class="card-title">Gemini AI (OCR Cerdas)</div>
+
+        <div class="fgrp">
+          <label>API Key Google Gemini</label>
+          <div style="display:flex;gap:8px;">
+            <input id="cfgGeminiKey" type="text" placeholder="AIzaSy..." />
+            <button class="btn btn-ghost btn-sm" onclick="testGemini()">Tes Key</button>
+          </div>
+          <div class="helper">Dapatkan gratis di <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#818cf8;">aistudio.google.com/apikey</a></div>
+        </div>
+
+        <div class="frow">
+          <div class="fgrp">
+            <label>Model Gemini</label>
+            <input id="cfgGeminiModel" type="text" value="gemini-3.5-flash-lite" />
+          </div>
+          <div class="fgrp">
+            <label>Mode Akun</label>
+            <select id="cfgGeminiPaid">
+              <option value="false">Gratis (13 req/mnt, 1 bersamaan)</option>
+              <option value="true">Berbayar (120 req/mnt, 6 bersamaan)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fgrp">
+            <label>Override RPM (0 = otomatis)</label>
+            <input id="cfgGeminiRpm" type="number" value="0" min="0" />
+          </div>
+          <div class="fgrp">
+            <label>Override Concurrency (0 = otomatis)</label>
+            <input id="cfgGeminiConc" type="number" value="0" min="0" />
+          </div>
+        </div>
+
+        <div class="fgrp">
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;">
+            <input id="cfgUseGemini" type="checkbox" checked />
+            Aktifkan Gemini (untuk bukti yang meragukan / mode Gemini saja)
+          </label>
+        </div>
+
+        <div id="geminiTestResult" style="font-size:13px;margin-top:8px;"></div>
+
+        <button class="btn btn-primary" onclick="saveGlobalConfig()">💾 Simpan Pengaturan Gemini</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// =========================================================
+// STATE
+// =========================================================
+let state = {
+  events: [],
+  currentEvent: "",
+  config: {},
+  isRunning: false,
+  isPaused: false,
+  hasCreds: false,
+  resultCount: 0,
+  tabs: []
+};
+let ws = null;
+
+// =========================================================
+// UTILITY
+// =========================================================
+const $ = id => document.getElementById(id);
+const rp = n => n != null ? 'Rp' + Number(n).toLocaleString('id-ID') : '–';
+const badgeCls = s => s && s.startsWith('VALID') ? 'bx-v' : (s && s.startsWith('TIDAK VALID') ? 'bx-i' : (s ? 'bx-m' : 'bx-g'));
+
+function toast(msg, type = 'ok', dur = 3500) {
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.textContent = msg;
+  $('toast').appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+
+function addLog(text, cls = '') {
+  const box = $('console');
+  const div = document.createElement('div');
+  div.className = 'log ' + (cls || (text.toLowerCase().includes('valid') && !text.toLowerCase().includes('tidak valid') ? 'ok' : text.toLowerCase().includes('galat') || text.toLowerCase().includes('error') ? 'err' : text.toLowerCase().includes('peringatan') || text.toLowerCase().includes('warning') ? 'warn' : 'info'));
+  const now = new Date().toLocaleTimeString('id-ID');
+  div.textContent = `[${now}] ${text}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearLog() { $('console').innerHTML = ''; }
+
+// =========================================================
+// TABS
+// =========================================================
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  $(tabId).classList.add('active');
+  if (tabId === 't-review') loadReview();
+}
+
+// =========================================================
+// STATUS PILL
+// =========================================================
+function setStatus(running, paused) {
+  state.isRunning = running; state.isPaused = paused;
+  const pill = $('statusPill'), txt = $('statusText');
+  pill.className = 'status-pill';
+  const dot = pill.querySelector('.dot');
+  if (running && !paused) {
+    pill.classList.add('pill-running'); txt.textContent = 'Memproses...';
+    dot.classList.add('pulse');
+  } else if (paused) {
+    pill.classList.add('pill-paused'); txt.textContent = 'Dijeda';
+    dot.classList.remove('pulse');
+  } else {
+    pill.classList.add('pill-idle'); txt.textContent = 'Idle';
+    dot.classList.remove('pulse');
+  }
+  $('btnStart').disabled = running;
+  $('btnPause').disabled = !running;
+  $('btnPause').textContent = paused ? '▶ Lanjut' : '⏸ Jeda';
+  $('btnStop').disabled = !running;
+}
+
+// =========================================================
+// LOAD CONFIG
+// =========================================================
+async function loadConfig(eventName) {
+  try {
+    const url = eventName ? `/api/config?event_name=${encodeURIComponent(eventName)}` : '/api/config';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+
+    state.events = data.events;
+    state.currentEvent = data.current_event;
+    state.config = data.config;
+    state.hasCreds = data.has_credentials;
+
+    // Update dropdowns
+    const sel = $('selEvent');
+    sel.innerHTML = state.events.map(e => `<option value="${e}" ${e === state.currentEvent ? 'selected' : ''}>${e}</option>`).join('');
+
+    // Update process tab header
+    $('dispEventName').textContent = state.currentEvent;
+    $('dispSheetUrl').textContent = state.config.spreadsheet_url || 'Spreadsheet belum dikonfigurasi';
+
+    // Fill settings form
+    fillSettingsForms(state.config);
+
+    // Fill credentials tab
+    $('credStatus').className = 'alert ' + (state.hasCreds ? 'alert-info' : 'alert-warn');
+    $('credStatus').textContent = state.hasCreds ? '✅ Kunci Google aktif dan siap digunakan.' : '⚠️ Belum ada kunci Google yang aktif.';
+
+    // Tabs info
+    if (data.tabs && data.tabs.length) {
+      fillSheetTabs(data.tabs, state.config.sheet_id);
     }
 
-    async function loadConfig(eventName = "") {
-      try {
-        const res = await fetch(`/api/config${eventName ? '?event_name=' + encodeURIComponent(eventName) : ''}`);
-        const data = await res.json();
-        currentConfig = data.config;
-        currentEvent = data.current_event;
+    setStatus(data.is_running, data.is_paused);
+  } catch (e) {
+    toast('Gagal memuat konfigurasi: ' + e.message, 'err');
+  }
+}
 
-        // Render Event Dropdown
-        const sel = document.getElementById('eventSelect');
-        sel.innerHTML = data.events.map(e => `<option value="${e}" ${e === currentEvent ? 'selected' : ''}>${e}</option>`).join('');
+function fillSettingsForms(cfg) {
+  // Event settings
+  $('cfgEventLabel').textContent = state.currentEvent;
+  $('cfgUrl').value = cfg.spreadsheet_url || '';
+  if ($('testUrl')) $('testUrl').value = cfg.spreadsheet_url || '';
+  $('cfgFirstRow').value = cfg.first_row || 2;
+  $('cfgRowFrom').value = cfg.row_from || 0;
+  $('cfgRowTo').value = cfg.row_to || 0;
+  $('cfgColLink').value = cfg.col_link || 'H';
+  $('cfgColNominal').value = cfg.col_nominal || 'G';
+  $('cfgColRekening').value = cfg.col_rekening || 'F';
+  $('cfgColCheck').value = cfg.col_check || 'I';
+  $('cfgColNote').value = cfg.col_note || 'K';
+  $('cfgColRef').value = cfg.col_ref || 'L';
+  $('cfgColNama').value = cfg.col_nama || 'C';
+  $('cfgColTimestamp').value = cfg.col_timestamp || 'A';
+  $('cfgTolerance').value = cfg.amount_tolerance != null ? cfg.amount_tolerance : 6500;
+  $('cfgMinAmount').value = cfg.min_amount || 0;
+  $('cfgMinDate').value = cfg.min_date || '';
+  $('cfgReprocess').value = cfg.reprocess || 'none';
+  // Global settings
+  $('cfgOfficer').value = cfg.officer || '';
+  $('cfgWorkers').value = cfg.workers || 3;
+  $('cfgBlockSize').value = cfg.block_size || 50;
+  $('cfgClaimTtl').value = cfg.claim_ttl_min || 30;
+  $('cfgOcrConf').value = cfg.ocr_conf_ok != null ? cfg.ocr_conf_ok : 75;
+  $('cfgGeminiKey').value = cfg.gemini_api_key || '';
+  $('cfgGeminiModel').value = cfg.gemini_model || 'gemini-3.5-flash-lite';
+  $('cfgGeminiPaid').value = cfg.gemini_paid ? 'true' : 'false';
+  $('cfgGeminiRpm').value = cfg.gemini_rpm || 0;
+  $('cfgGeminiConc').value = cfg.gemini_concurrency || 0;
+  $('cfgUseGemini').checked = cfg.use_gemini !== false;
+}
 
-        document.getElementById('eventDisplayName').textContent = currentEvent;
-        document.getElementById('eventSheetUrl').textContent = currentConfig.spreadsheet_url || 'Spreadsheet belum diatur';
+function fillSheetTabs(tabs, activeId) {
+  const sel = $('cfgSheetSel');
+  sel.innerHTML = tabs.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.title} (${t.rows} baris)</option>`).join('');
+}
 
-        // Render input values
-        document.getElementById('cfgSpreadsheetUrl').value = currentConfig.spreadsheet_url || '';
-        document.getElementById('cfgOfficer').value = currentConfig.officer || '';
-        document.getElementById('cfgAmountTolerance').value = currentConfig.amount_tolerance || 6500;
-        document.getElementById('cfgColLink').value = currentConfig.col_link || 'H';
-        document.getElementById('cfgColNominal').value = currentConfig.col_nominal || 'G';
-        document.getElementById('cfgColRekening').value = currentConfig.col_rekening || 'F';
-        document.getElementById('cfgColCheck').value = currentConfig.col_check || 'I';
-        document.getElementById('cfgColNote').value = currentConfig.col_note || 'K';
-        document.getElementById('cfgColRef').value = currentConfig.col_ref || 'L';
-        document.getElementById('cfgGeminiKey').value = currentConfig.gemini_api_key || '';
-        document.getElementById('cfgGeminiModel').value = currentConfig.gemini_model || 'gemini-3.5-flash-lite';
-        document.getElementById('cfgGeminiPaid').value = currentConfig.gemini_paid ? 'true' : 'false';
+// =========================================================
+// EVENT MANAGEMENT
+// =========================================================
+function onEventChange(name) {
+  state.currentEvent = name;
+  loadConfig(name);
+}
 
-        document.getElementById('credStatusText').textContent = data.has_credentials ? '✅ Kunci Google aktif' : '⚠️ Kunci Google belum diunggah';
-        updateRunningStatus(data.is_running, data.is_paused);
-      } catch (e) {
-        console.error(e);
-      }
+async function doAddEvent() {
+  const name = prompt('Nama event baru:', 'Event ' + (state.events.length + 1));
+  if (!name) return;
+  const r = await fetch('/api/event/add', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name}) });
+  const d = await r.json();
+  if (r.ok) { toast('Event "' + d.name + '" dibuat!'); loadConfig(d.name); }
+  else toast(d.detail || 'Gagal', 'err');
+}
+
+async function doRenameEvent() {
+  const newName = prompt('Nama baru untuk "' + state.currentEvent + '":', state.currentEvent);
+  if (!newName || newName === state.currentEvent) return;
+  const r = await fetch('/api/event/rename', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({old_name: state.currentEvent, new_name: newName}) });
+  const d = await r.json();
+  if (r.ok) { toast('Nama event diubah!'); loadConfig(d.name); }
+  else toast(d.detail || 'Gagal', 'err');
+}
+
+async function doDeleteEvent() {
+  if (!confirm(`Hapus event "${state.currentEvent}"? Data config event ini akan hilang.`)) return;
+  const r = await fetch('/api/event/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: state.currentEvent}) });
+  const d = await r.json();
+  if (r.ok) { toast('Event dihapus.'); loadConfig(''); }
+  else toast(d.detail || 'Gagal', 'err');
+}
+
+// =========================================================
+// SAVE CONFIG
+// =========================================================
+async function saveEventConfig() {
+  const tabSel = $('cfgSheetSel');
+  const payload = {
+    event_name: state.currentEvent,
+    config: {
+      spreadsheet_url: $('cfgUrl').value.trim(),
+      sheet_title: tabSel.options[tabSel.selectedIndex]?.text?.split(' (')[0] || '',
+      sheet_id: parseInt(tabSel.value) || 0,
+      first_row: parseInt($('cfgFirstRow').value) || 2,
+      row_from: parseInt($('cfgRowFrom').value) || 0,
+      row_to: parseInt($('cfgRowTo').value) || 0,
+      col_link: $('cfgColLink').value.trim().toUpperCase(),
+      col_nominal: $('cfgColNominal').value.trim().toUpperCase(),
+      col_rekening: $('cfgColRekening').value.trim().toUpperCase(),
+      col_check: $('cfgColCheck').value.trim().toUpperCase(),
+      col_note: $('cfgColNote').value.trim().toUpperCase(),
+      col_ref: $('cfgColRef').value.trim().toUpperCase(),
+      col_nama: $('cfgColNama').value.trim().toUpperCase(),
+      col_timestamp: $('cfgColTimestamp').value.trim().toUpperCase(),
+      amount_tolerance: parseInt($('cfgTolerance').value) || 0,
+      min_amount: parseInt($('cfgMinAmount').value) || 0,
+      min_date: $('cfgMinDate').value || '',
+      reprocess: $('cfgReprocess').value,
     }
+  };
+  const r = await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const d = await r.json();
+  if (r.ok) { toast('Pengaturan event disimpan!'); loadConfig(state.currentEvent); }
+  else toast(d.detail || 'Gagal menyimpan', 'err');
+}
 
-    function updateRunningStatus(running, paused) {
-      document.getElementById('btnStart').disabled = running;
-      document.getElementById('btnPause').disabled = !running;
-      document.getElementById('btnPause').textContent = paused ? '▶ Lanjut' : '⏸ Jeda';
-      document.getElementById('btnStop').disabled = !running;
+async function saveGlobalConfig() {
+  const payload = {
+    event_name: state.currentEvent,
+    config: {
+      officer: $('cfgOfficer').value.trim(),
+      workers: parseInt($('cfgWorkers').value) || 3,
+      block_size: parseInt($('cfgBlockSize').value) || 50,
+      claim_ttl_min: parseInt($('cfgClaimTtl').value) || 30,
+      ocr_conf_ok: parseFloat($('cfgOcrConf').value) || 75,
+      gemini_api_key: $('cfgGeminiKey').value.trim(),
+      gemini_model: $('cfgGeminiModel').value.trim(),
+      gemini_paid: $('cfgGeminiPaid').value === 'true',
+      gemini_rpm: parseInt($('cfgGeminiRpm').value) || 0,
+      gemini_concurrency: parseInt($('cfgGeminiConc').value) || 0,
+      use_gemini: $('cfgUseGemini').checked,
     }
+  };
+  const r = await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const d = await r.json();
+  if (r.ok) toast('Pengaturan umum disimpan!');
+  else toast(d.detail || 'Gagal menyimpan', 'err');
+}
 
-    async function startProcess() {
-      const res = await fetch('/api/process/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_name: currentEvent })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        updateRunningStatus(true, false);
-      } else {
-        alert(data.detail || 'Gagal memulai proses');
-      }
+// =========================================================
+// SHEET / CREDENTIALS
+// =========================================================
+async function testSheetConn() {
+  const url = $('cfgUrl').value || $('testUrl').value;
+  if (!url) return toast('Isi URL Spreadsheet terlebih dahulu.', 'err');
+  const r = await fetch('/api/sheets/connect', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({url}) });
+  const d = await r.json();
+  if (r.ok) {
+    toast(`Berhasil: "${d.title}"`);
+    if (d.tabs) fillSheetTabs(d.tabs, 0);
+    $('sheetConnResult').textContent = `✅ Terhubung: "${d.title}" — ${d.tabs.length} tab ditemukan.`;
+    $('sheetConnResult').style.color = '#34d399';
+  } else {
+    $('sheetConnResult').textContent = '❌ ' + (d.detail || 'Gagal');
+    $('sheetConnResult').style.color = '#f87171';
+    toast(d.detail || 'Gagal menghubungkan', 'err');
+  }
+}
+
+async function uploadKey() {
+  const fi = $('fileKey');
+  if (!fi.files.length) return toast('Pilih file .json terlebih dahulu.', 'err');
+  const fd = new FormData();
+  fd.append('file', fi.files[0]);
+  const r = await fetch('/api/credentials/upload', { method: 'POST', body: fd });
+  const d = await r.json();
+  if (r.ok) { toast(d.message); loadConfig(state.currentEvent); }
+  else toast(d.detail || 'Gagal mengunggah', 'err');
+}
+
+async function testGemini() {
+  const key = $('cfgGeminiKey').value.trim();
+  const model = $('cfgGeminiModel').value.trim();
+  if (!key) return toast('Isi API Key Gemini terlebih dahulu.', 'err');
+  const r = await fetch('/api/gemini/test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key, model}) });
+  const d = await r.json();
+  const el = $('geminiTestResult');
+  el.textContent = (d.ok ? '✅ ' : '❌ ') + d.message;
+  el.style.color = d.ok ? '#34d399' : '#f87171';
+  if (d.ok && d.models.length) {
+    el.textContent += '\nModel tersedia: ' + d.models.slice(0,5).join(', ');
+  }
+  toast(d.ok ? 'Gemini OK!' : 'Tes Gemini gagal', d.ok ? 'ok' : 'err');
+}
+
+// =========================================================
+// PROCESS CONTROLS
+// =========================================================
+async function doStart() {
+  const r = await fetch('/api/process/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({event_name: state.currentEvent}) });
+  const d = await r.json();
+  if (r.ok) setStatus(true, false);
+  else toast(d.detail || 'Gagal memulai proses', 'err');
+}
+
+async function doPause() {
+  const url = state.isPaused ? '/api/process/resume' : '/api/process/pause';
+  await fetch(url, { method: 'POST' });
+}
+
+async function doStop() {
+  await fetch('/api/process/stop', { method: 'POST' });
+}
+
+// =========================================================
+// RESULTS
+// =========================================================
+function addResultRow(item) {
+  const body = $('tblResult');
+  if (body.querySelector('td[colspan]')) body.innerHTML = '';
+  state.resultCount++;
+  $('resultCount').textContent = state.resultCount + ' baris';
+  const nom = item.extracted?.nominal != null ? rp(item.extracted.nominal) : '–';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><strong>#${item.row}</strong></td>
+    <td>${item.nama || '–'}</td>
+    <td><span class="bx ${badgeCls(item.status)}">${item.status || '–'}</span></td>
+    <td>${nom}</td>
+    <td style="font-size:12px;color:var(--muted);max-width:300px;">${item.note || '–'}</td>
+  `;
+  body.insertBefore(tr, body.firstChild);
+}
+
+// =========================================================
+// REVIEW MANUAL
+// =========================================================
+async function loadReview() {
+  if (!state.currentEvent) { toast('Pilih event terlebih dahulu.', 'err'); return; }
+  const mode = $('selReviewMode').value;
+  const r = await fetch(`/api/review/queue?event_name=${encodeURIComponent(state.currentEvent)}&mode=${mode}`);
+  const d = await r.json();
+  const body = $('tblReview');
+  if (!r.ok) { body.innerHTML = `<tr><td colspan="7" style="color:var(--danger);padding:20px;">${d.detail || 'Gagal memuat'}</td></tr>`; return; }
+  if (!d.items.length) {
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Tidak ada data dalam antrean mode "${mode}".</td></tr>`;
+    return;
+  }
+  body.innerHTML = d.items.map(r2 => `
+    <tr>
+      <td><strong>#${r2.row}</strong></td>
+      <td>${r2.nama || '–'}</td>
+      <td>${rp(r2.nominal)}</td>
+      <td style="font-size:12px;">${r2.rekening || '–'}</td>
+      <td><a href="${r2.link || '#'}" target="_blank" rel="noopener" style="color:#818cf8;">Buka ↗</a></td>
+      <td style="font-size:12px;color:var(--muted);max-width:260px;">${r2.note || '–'}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-success btn-sm" onclick="sendDecision(${r2.row},'${(r2.note||'').replace(/'/g,"\\'")}',true)">✓ Valid</button>
+          <button class="btn btn-danger btn-sm" onclick="sendDecision(${r2.row},'${(r2.note||'').replace(/'/g,"\\'")}',false)">✗ Tolak</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function sendDecision(row, note, ok) {
+  const officer = $('cfgOfficer').value || 'petugas';
+  const reason = ok ? '' : (prompt('Alasan penolakan (opsional):', 'bukti tidak sesuai') ?? '');
+  const r = await fetch('/api/review/decision', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ event_name: state.currentEvent, row, note, ok, officer, reason })
+  });
+  if (r.ok) { toast(ok ? 'Ditandai VALID.' : 'Ditandai TIDAK VALID.'); loadReview(); }
+  else { const d = await r.json(); toast(d.detail || 'Gagal', 'err'); }
+}
+
+// =========================================================
+// WEBSOCKET
+// =========================================================
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws`);
+  ws.onopen = () => { addLog('Koneksi realtime aktif.', 'info'); };
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'log') addLog(msg.message);
+    else if (msg.type === 'progress') {
+      $('progText').textContent = `Memproses ${msg.done} / ${msg.total} baris`;
+      $('progPct').textContent = `${msg.percent}%`;
+      $('progFill').style.width = `${msg.percent}%`;
+    } else if (msg.type === 'result') addResultRow(msg.item);
+    else if (msg.type === 'status') setStatus(msg.is_running, msg.is_paused);
+    else if (msg.type === 'init') {
+      setStatus(msg.is_running, msg.is_paused);
+      (msg.recent_logs || []).forEach(l => addLog(l));
+      (msg.recent_results || []).forEach(addResultRow);
     }
+  };
+  ws.onclose = () => { addLog('Koneksi terputus, mencoba ulang...', 'warn'); setTimeout(connectWS, 2500); };
+  ws.onerror = () => ws.close();
+}
 
-    async function pauseProcess() {
-      const btn = document.getElementById('btnPause');
-      const isPaused = btn.textContent.includes('Lanjut');
-      await fetch(isPaused ? '/api/process/resume' : '/api/process/pause', { method: 'POST' });
-    }
-
-    async function stopProcess() {
-      await fetch('/api/process/stop', { method: 'POST' });
-    }
-
-    async function saveCurrentConfig() {
-      const payload = {
-        spreadsheet_url: document.getElementById('cfgSpreadsheetUrl').value,
-        officer: document.getElementById('cfgOfficer').value,
-        amount_tolerance: parseInt(document.getElementById('cfgAmountTolerance').value) || 0,
-        col_link: document.getElementById('cfgColLink').value,
-        col_nominal: document.getElementById('cfgColNominal').value,
-        col_rekening: document.getElementById('cfgColRekening').value,
-        col_check: document.getElementById('cfgColCheck').value,
-        col_note: document.getElementById('cfgColNote').value,
-        col_ref: document.getElementById('cfgColRef').value,
-        gemini_api_key: document.getElementById('cfgGeminiKey').value,
-        gemini_model: document.getElementById('cfgGeminiModel').value,
-        gemini_paid: document.getElementById('cfgGeminiPaid').value === 'true'
-      };
-      const res = await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_name: currentEvent, config: payload })
-      });
-      if (res.ok) alert('Pengaturan berhasil disimpan!');
-    }
-
-    async function uploadCredentialFile() {
-      const fileInput = document.getElementById('fileCredential');
-      if (!fileInput.files.length) return alert('Pilih file .json terlebih dahulu');
-      const fd = new FormData();
-      fd.append('file', fileInput.files[0]);
-      const res = await fetch('/api/credentials/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message);
-        loadConfig(currentEvent);
-      } else {
-        alert(data.detail || 'Gagal mengunggah kunci');
-      }
-    }
-
-    async function testSheetConnect() {
-      const url = document.getElementById('cfgSpreadsheetUrl').value;
-      const res = await fetch('/api/sheets/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert(`Berhasil terhubung ke spreadsheet: "${data.title}"`);
-      } else {
-        alert(data.detail || 'Gagal menghubungkan spreadsheet');
-      }
-    }
-
-    async function testGeminiKey() {
-      const key = document.getElementById('cfgGeminiKey').value;
-      const res = await fetch('/api/gemini/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key })
-      });
-      const data = await res.json();
-      alert(data.message);
-    }
-
-    // WebSocket Realtime
-    function connectWS() {
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${proto}//${window.location.host}/ws`);
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'log') {
-          addConsoleLog(msg.message);
-        } else if (msg.type === 'progress') {
-          document.getElementById('progressText').textContent = `Memproses: ${msg.done} / ${msg.total} baris`;
-          document.getElementById('progressPercent').textContent = `${msg.percent}%`;
-          document.getElementById('progressFill').style.width = `${msg.percent}%`;
-        } else if (msg.type === 'result') {
-          addResultRow(msg.item);
-        } else if (msg.type === 'status') {
-          updateRunningStatus(msg.is_running, msg.is_paused);
-        } else if (msg.type === 'init') {
-          updateRunningStatus(msg.is_running, msg.is_paused);
-          msg.recent_logs.forEach(addConsoleLog);
-          msg.recent_results.forEach(addResultRow);
-        }
-      };
-      ws.onclose = () => setTimeout(connectWS, 2000);
-    }
-
-    function addConsoleLog(text) {
-      const box = document.getElementById('consoleBox');
-      const div = document.createElement('div');
-      div.className = 'log-line';
-      if (text.includes('VALID')) div.className += ' success';
-      if (text.includes('TIDAK VALID') || text.includes('Error')) div.className += ' error';
-      div.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
-      box.appendChild(div);
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function clearLogs() {
-      document.getElementById('consoleBox').innerHTML = '';
-    }
-
-    function addResultRow(item) {
-      const body = document.getElementById('resultBody');
-      if (body.querySelector('td[colspan]')) body.innerHTML = '';
-      const tr = document.createElement('tr');
-      const badgeCls = item.status === 'VALID' ? 'badge-valid' : (item.status === 'TIDAK VALID' ? 'badge-invalid' : 'badge-manual');
-      const nominal = item.extracted?.nominal ? `Rp${item.extracted.nominal.toLocaleString('id-ID')}` : '-';
-      tr.innerHTML = `
-        <td><strong>#${item.row}</strong></td>
-        <td>${item.nama || '-'}</td>
-        <td><span class="badge ${badgeCls}">${item.status}</span></td>
-        <td>${nominal}</td>
-        <td style="max-width: 300px; font-size: 12px; color: var(--text-muted);">${item.note}</td>
-      `;
-      body.insertBefore(tr, body.firstChild);
-    }
-
-    // Review Manual Queue
-    async function loadReviewQueue() {
-      const mode = document.getElementById('reviewMode').value;
-      const res = await fetch(`/api/review/queue?event_name=${encodeURIComponent(currentEvent)}&mode=${mode}`);
-      const data = await res.json();
-      const body = document.getElementById('reviewBody');
-      if (!data.items || data.items.length === 0) {
-        body.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">Tidak ada bukti transfer dalam antrean (${mode}).</td></tr>`;
-        return;
-      }
-      body.innerHTML = data.items.map(r => `
-        <tr>
-          <td><strong>#${r.row}</strong></td>
-          <td>${r.nama || '-'}</td>
-          <td>Rp${(r.nominal || 0).toLocaleString('id-ID')}</td>
-          <td>${r.rekening || '-'}</td>
-          <td><a href="${r.link}" target="_blank" style="color: #818cf8; text-decoration: underline;">Buka Bukti ↗</a></td>
-          <td style="max-width: 260px; font-size: 12px; color: var(--text-muted);">${r.note}</td>
-          <td>
-            <div style="display: flex; gap: 6px;">
-              <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="sendDecision(${r.row}, '${r.note.replace(/'/g, "\\'")}', true)">VALID</button>
-              <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="sendDecision(${r.row}, '${r.note.replace(/'/g, "\\'")}', false)">TOLAK</button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    async function sendDecision(row, note, ok) {
-      const officer = document.getElementById('cfgOfficer').value || 'petugas';
-      const reason = ok ? '' : prompt('Alasan penolakan:', 'bukti tidak sesuai');
-      if (!ok && reason === null) return;
-      const res = await fetch('/api/review/decision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_name: currentEvent, row, note, ok, officer, reason })
-      });
-      if (res.ok) {
-        loadReviewQueue();
-      } else {
-        const d = await res.json();
-        alert(d.detail || 'Gagal menyimpan keputusan');
-      }
-    }
-
-    window.onload = () => {
-      loadConfig();
-      connectWS();
-    };
-  </script>
+// =========================================================
+// INIT
+// =========================================================
+window.onload = () => {
+  loadConfig();
+  connectWS();
+};
+</script>
 </body>
 </html>

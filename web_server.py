@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from app.config import Config, Store, APP_DIR, parse_spreadsheet_id, parse_gid
 from app.sheets import SheetsClient, DriveClient
+from app.pipeline import Engine, load_review_queue, apply_manual
 from app.gemini import GeminiReader
 
 def test_gemini_key(key: str, model: str = "gemini-3.5-flash-lite") -> tuple[bool, str, list[str]]:
@@ -71,7 +72,11 @@ class AppState:
                 self.ws_clients.remove(dead)
 
 state = AppState()
-loop = asyncio.get_event_loop()
+try:
+    loop = asyncio.get_event_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
 def sync_broadcast(data: dict):
     try:
@@ -86,6 +91,13 @@ def get_config(event_name: Optional[str] = None):
     s = Store.load()
     name = event_name or s.last_event or (s.names()[0] if s.names() else "Event 1")
     cfg = s.config_for(name)
+    tabs = []
+    if cfg.spreadsheet_id:
+        try:
+            client = SheetsClient(cfg.spreadsheet_id)
+            tabs = [{"title": t, "id": i, "rows": r} for t, i, r in client.list_tabs()]
+        except Exception:
+            pass
     return {
         "events": s.names(),
         "current_event": name,
@@ -93,7 +105,8 @@ def get_config(event_name: Optional[str] = None):
         "has_credentials": (APP_DIR / "service_account.json").exists() or (APP_DIR / "client_secret.json").exists(),
         "is_running": state.is_running,
         "is_paused": state.is_paused,
-        "progress": state.progress
+        "progress": state.progress,
+        "tabs": tabs,
     }
 
 class SaveConfigRequest(BaseModel):
@@ -107,7 +120,17 @@ def save_config(req: SaveConfigRequest):
     for k, v in req.config.items():
         if hasattr(cfg, k):
             setattr(cfg, k, v)
-    cfg.save()
+    # Auto-derive spreadsheet_id & gid dari URL jika ada
+    if cfg.spreadsheet_url:
+        sid = parse_spreadsheet_id(cfg.spreadsheet_url)
+        if sid:
+            cfg.spreadsheet_id = sid
+        gid = parse_gid(cfg.spreadsheet_url)
+        if gid is not None:
+            cfg.sheet_id = gid
+    s.update_global(cfg)
+    s.update_event(cfg)
+    s.save()
     return {"status": "saved", "name": req.event_name}
 
 @app.post("/api/event/add")
@@ -118,6 +141,20 @@ def add_event(payload: Dict[str, str]):
     s.last_event = new_name
     s.save()
     return {"status": "created", "name": new_name}
+
+@app.post("/api/event/rename")
+def rename_event(payload: Dict[str, str]):
+    old_name = payload.get("old_name", "").strip()
+    new_name = payload.get("new_name", "").strip()
+    if not old_name or not new_name:
+        raise HTTPException(status_code=400, detail="Nama event tidak boleh kosong")
+    s = Store.load()
+    try:
+        result = s.rename(old_name, new_name)
+        s.save()
+        return {"status": "renamed", "name": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/event/delete")
 def delete_event(payload: Dict[str, str]):
@@ -258,7 +295,8 @@ def stop_process():
 @app.get("/api/review/queue")
 def get_review_queue(event_name: Optional[str] = None, mode: str = "manual"):
     s = Store.load()
-    cfg = s.config_for(event_name or s.last_event)
+    name = event_name if event_name and event_name != "undefined" else s.last_event
+    cfg = s.config_for(name or (s.names()[0] if s.names() else "Event 1"))
     try:
         sheets_client = SheetsClient(cfg.spreadsheet_id)
         queue = load_review_queue(sheets_client, cfg, mode=mode)
