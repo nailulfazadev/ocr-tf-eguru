@@ -1,0 +1,11 @@
+PySide6-Essentials>=6.6
+google-api-python-client>=2.100
+google-auth-oauthlib>=1.2
+google-auth-httplib2>=0.2
+google-genai>=1.0
+pytesseract>=0.3.10
+Pillow>=10
+numpy>=1.26
+opencv-python-headless>=4.8
+rapidfuzz>=3.0
+pytest>=8
