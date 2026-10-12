@@ -37,8 +37,7 @@ app.add_middleware(
 # State manager
 class AppState:
     def __init__(self):
-        self.store = Store.load()
-        self.active_engine: Optional[Engine] = None
+        self.active_engine: Optional[Any] = None  # Engine, diisi saat proses berjalan
         self.engine_thread: Optional[threading.Thread] = None
         self.is_running = False
         self.is_paused = False
@@ -88,26 +87,22 @@ def sync_broadcast(data: dict):
 
 @app.get("/api/config")
 def get_config(event_name: Optional[str] = None):
-    s = Store.load()
-    name = event_name or s.last_event or (s.names()[0] if s.names() else "Event 1")
-    cfg = s.config_for(name)
-    tabs = []
-    if cfg.spreadsheet_id:
-        try:
-            client = SheetsClient(cfg.spreadsheet_id)
-            tabs = [{"title": t, "id": i, "rows": r} for t, i, r in client.list_tabs()]
-        except Exception:
-            pass
-    return {
-        "events": s.names(),
-        "current_event": name,
-        "config": cfg.__dict__,
-        "has_credentials": (APP_DIR / "service_account.json").exists() or (APP_DIR / "client_secret.json").exists(),
-        "is_running": state.is_running,
-        "is_paused": state.is_paused,
-        "progress": state.progress,
-        "tabs": tabs,
-    }
+    try:
+        s = Store.load()
+        name = event_name or s.last_event or (s.names()[0] if s.names() else "Event 1")
+        cfg = s.config_for(name)
+        return {
+            "events": s.names(),
+            "current_event": name,
+            "config": cfg.__dict__,
+            "has_credentials": (APP_DIR / "service_account.json").exists() or (APP_DIR / "client_secret.json").exists(),
+            "is_running": state.is_running,
+            "is_paused": state.is_paused,
+            "progress": state.progress,
+            "tabs": [],  # tab di-load terpisah via /api/sheets/connect
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal memuat config: {str(e)}")
 
 class SaveConfigRequest(BaseModel):
     event_name: str
