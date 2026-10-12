@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  bukti-tf-web:
+    build: .
+    container_name: bukti-tf-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Data konfigurasi & cache tersimpan permanen di host VPS
+      - bukti_tf_data:/root/.bukti_tf
+
+volumes:
+  bukti_tf_data:
