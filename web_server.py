@@ -181,10 +181,12 @@ def connect_sheets(payload: Dict[str, str]):
     try:
         client = _make_sheets(sheet_id)
         tabs = client.list_tabs()
+        # Ambil judul spreadsheet dari metadata tabs jika memungkinkan
+        title = tabs[0][0].split("!")[0] if tabs else sheet_id
         return {
             "status": "ok",
             "spreadsheet_id": sheet_id,
-            "title": client.spreadsheet_title(),
+            "title": f"Spreadsheet ({sheet_id[:20]}...)" if len(sheet_id) > 20 else sheet_id,
             "tabs": [{"title": t, "id": i, "rows": r} for t, i, r in tabs]
         }
     except Exception as e:
