@@ -69,7 +69,7 @@ def find_service_account() -> Path | None:
     return None
 
 
-def get_credentials():
+def get_credentials(allow_browser: bool = True):
     """Prioritas: service_account.json (tanpa login). Jika tidak ada: login Google per orang (OAuth)."""
     APP_DIR.mkdir(parents=True, exist_ok=True)
     sa = find_service_account()
@@ -87,6 +87,11 @@ def get_credentials():
             return creds
         except RefreshError:
             pass
+    if not allow_browser:
+        raise ValueError(
+            "File 'service_account.json' belum ditemukan. Di server VPS / web, Google mewajibkan file Service Account "
+            "agar tidak perlu login browser. Silakan unggah service_account.json di tab 'Kunci & API'."
+        )
     flow = InstalledAppFlow.from_client_secrets_file(str(find_client_secret()), SCOPES)
     creds = flow.run_local_server(port=0, prompt="consent")   # membuka browser untuk login
     TOKEN_PATH.write_text(creds.to_json())

@@ -17,12 +17,12 @@ from app.gemini import GeminiReader
 
 def _make_sheets(spreadsheet_id: str, sheet_title: str = "", sheet_id: int = 0) -> SheetsClient:
     """Buat SheetsClient dengan credentials otomatis."""
-    creds = get_credentials()
+    creds = get_credentials(allow_browser=False)
     return SheetsClient(creds, spreadsheet_id, sheet_title, sheet_id)
 
 def _make_drive() -> DriveClient:
     """Buat DriveClient dengan credentials otomatis."""
-    creds = get_credentials()
+    creds = get_credentials(allow_browser=False)
     return DriveClient(creds)
 
 def test_gemini_key(key: str, model: str = "gemini-3.5-flash-lite") -> tuple[bool, str, list[str]]:
@@ -358,13 +358,27 @@ async def upload_credential(file: UploadFile = File(...)):
     if "type" in data and data["type"] == "service_account":
         target = APP_DIR / "service_account.json"
         target.write_bytes(content)
-        return {"status": "ok", "type": "service_account", "message": "Service Account berhasil disimpan"}
+        try:
+            (Path.cwd() / "service_account.json").write_bytes(content)
+        except Exception:
+            pass
+        email = data.get("client_email", "")
+        return {
+            "status": "ok",
+            "type": "service_account",
+            "email": email,
+            "message": f"Service Account berhasil disimpan ({email}). Pastikan spreadsheet telah dibagikan ke email ini sebagai Editor!"
+        }
     elif "installed" in data or "web" in data:
         target = APP_DIR / "client_secret.json"
         target.write_bytes(content)
-        return {"status": "ok", "type": "client_secret", "message": "OAuth Client Secret berhasil disimpan"}
+        return {
+            "status": "ok",
+            "type": "client_secret",
+            "message": "File adalah OAuth Client Secret. Perhatian: Untuk VPS/Web Server, disarankan service_account.json agar tidak memerlukan login browser."
+        }
     else:
-        raise HTTPException(status_code=400, detail="Format JSON kredensial Google tidak dikenali")
+        raise HTTPException(status_code=400, detail="Format JSON tidak dikenali (harus service account atau OAuth client)")
 
 # WebSocket Endpoint for Realtime Dashboard
 @app.websocket("/ws")
