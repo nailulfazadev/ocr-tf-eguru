@@ -490,21 +490,10 @@
           <div class="fgrp">
             <label>Model Gemini</label>
             <select id="cfgGeminiModel">
-              <optgroup label="⚡ Tercepat (Direkomendasikan untuk OCR)">
-                <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite ★ (Default)</option>
-                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
-                <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b (sangat hemat)</option>
-                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-              </optgroup>
-              <optgroup label="🧠 Lebih Akurat (Lebih Lambat)">
-                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
-                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-              </optgroup>
+              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite ★ (Default, tercepat)</option>
+              <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
             </select>
-            <div class="helper">Model lebih besar = lebih akurat tapi lebih lambat &amp; mahal</div>
+            <div class="helper">Seri 1.x / 2.x sudah tidak tersedia untuk API key baru</div>
           </div>
           <div class="fgrp">
             <label>Mode Akun</label>
@@ -531,6 +520,14 @@
             <input id="cfgUseGemini" type="checkbox" checked />
             Aktifkan Gemini (untuk bukti yang meragukan / mode Gemini saja)
           </label>
+        </div>
+
+        <div class="fgrp">
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;">
+            <input id="cfgGeminiOnly" type="checkbox" />
+            Lewati Tesseract — semua bukti langsung dibaca Gemini (lebih cepat di VPS)
+          </label>
+          <div class="helper">Tanpa centang: Tesseract dulu (CPU VPS), Gemini hanya untuk yang meragukan</div>
         </div>
 
         <div id="geminiTestResult" style="font-size:13px;margin-top:8px;"></div>
@@ -701,13 +698,14 @@ function fillSettingsForms(cfg) {
   $('cfgGeminiKey').value = cfg.gemini_api_key || '';
   // Model Gemini dropdown — fallback ke default jika model tidak ada di list
   const mdl = $('cfgGeminiModel');
-  const modelVal = cfg.gemini_model || 'gemini-2.0-flash-lite';
+  const modelVal = cfg.gemini_model || 'gemini-3.1-flash-lite';
   if ([...mdl.options].some(o => o.value === modelVal)) mdl.value = modelVal;
-  else mdl.value = 'gemini-2.0-flash-lite';
+  else mdl.value = 'gemini-3.1-flash-lite';
   $('cfgGeminiPaid').value = cfg.gemini_paid ? 'true' : 'false';
   $('cfgGeminiRpm').value = cfg.gemini_rpm || 0;
   $('cfgGeminiConc').value = cfg.gemini_concurrency || 0;
   $('cfgUseGemini').checked = cfg.use_gemini !== false;
+  $('cfgGeminiOnly').checked = !!cfg.gemini_only;
 }
 
 function fillSheetTabs(tabs, activeId) {
@@ -798,6 +796,7 @@ async function saveGlobalConfig() {
       gemini_rpm: parseInt($('cfgGeminiRpm').value) || 0,
       gemini_concurrency: parseInt($('cfgGeminiConc').value) || 0,
       use_gemini: $('cfgUseGemini').checked,
+      gemini_only: $('cfgGeminiOnly').checked,
     }
   };
   const r = await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });

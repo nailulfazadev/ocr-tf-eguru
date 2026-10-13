@@ -7,7 +7,7 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 
 APP_NAME = "Cek Bukti TF e-guru.id"
-DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
 LEGACY_MODEL_PREFIXES = ("gemini-1.", "gemini-2.0", "gemini-2.5")
 APP_DIR = Path.home() / ".bukti_tf"          # nama folder dipertahankan agar pengaturan lama tidak hilang
 CACHE_DIR = APP_DIR / "cache"
@@ -78,6 +78,7 @@ class Config:
     # ---- umum (dipakai semua event) ----
     officer: str = ""
     use_gemini: bool = True
+    gemini_only: bool = False      # True = lewati Tesseract, semua bukti langsung dibaca Gemini
     gemini_api_key: str = ""
     gemini_model: str = DEFAULT_GEMINI_MODEL
     gemini_paid: bool = False      # akun berbayar -> lebih cepat
@@ -102,7 +103,7 @@ class Config:
         s.save()
 
 
-GLOBAL_KEYS = {"officer", "use_gemini", "gemini_api_key", "gemini_model", "gemini_paid", "gemini_rpm",
+GLOBAL_KEYS = {"officer", "use_gemini", "gemini_only", "gemini_api_key", "gemini_model", "gemini_paid", "gemini_rpm",
                "gemini_concurrency", "install_id", "workers", "block_size", "claim_ttl_min", "ocr_conf_ok"}
 _ALL_KEYS = {f.name for f in fields(Config)}
 

@@ -392,14 +392,17 @@ class Engine:
     def run(self) -> None:
         cfg = self.cfg
         try:
+            if getattr(cfg, "gemini_only", False) and self.gemini:
+                raise pytesseract.TesseractNotFoundError()   # dipilih pengguna: lewati Tesseract
             lang = ocr.check_ready()
         except pytesseract.TesseractNotFoundError:
             if not self.gemini:
                 self.on_log(TESSERACT_HELP)
                 return
             self.ocr_ok = False
-            self.on_log("Tesseract tidak ditemukan -> MODE GEMINI SAJA: semua bukti dibaca Gemini (lebih akurat, "
-                        "tetapi memakai kuota harian; bila habis, lanjutkan besok).")
+            why = "dipilih di Pengaturan" if getattr(cfg, "gemini_only", False) else "Tesseract tidak ditemukan"
+            self.on_log(f"MODE GEMINI SAJA ({why}): semua bukti dibaca Gemini '{cfg.gemini_model}' "
+                        f"({getattr(self.gemini, 'rpm', '?')} req/mnt, {getattr(self.gemini, 'concurrency', 1)} bersamaan).")
             lang = "ind"
             self._workers = max(self._workers, getattr(self.gemini, "concurrency", 1))   # Gemini saja: ikuti kecepatannya
         if "ind" not in lang:
