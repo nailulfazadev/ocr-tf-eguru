@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cek Bukti TF e-guru.id</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2306b6d4'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='14' fill='white'%3ETF%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -27,6 +28,19 @@
 
     /* HEADER */
     header { padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(11,15,26,0.95); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 200; gap: 16px; }
+    /* TRAFFIC LIGHT (macOS dots) */
+    .traffic-lights { display: flex; align-items: center; gap: 7px; flex-shrink: 0; padding-right: 14px; }
+    .tl { width: 13px; height: 13px; border-radius: 50%; cursor: default; position: relative; transition: filter .2s, transform .2s; flex-shrink: 0; }
+    .tl::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.15); opacity: 0; transition: opacity .2s; }
+    .tl:hover { transform: scale(1.15); filter: brightness(1.15); }
+    .tl:hover::after { opacity: 1; }
+    .tl-red   { background: radial-gradient(circle at 35% 35%, #ff8a80, #ff5252, #c62828); box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(198,40,40,.6); }
+    .tl-yellow{ background: radial-gradient(circle at 35% 35%, #ffe57f, #ffd740, #f9a825); box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(249,168,37,.6); }
+    .tl-green { background: radial-gradient(circle at 35% 35%, #b9f6ca, #69f0ae, #2e7d32); box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 1px 3px rgba(46,125,50,.6); }
+    /* glow pulse on running */
+    .tl-green.active-glow { animation: tl-glow 2s infinite; }
+    @keyframes tl-glow { 0%,100%{box-shadow:0 0 0 .5px rgba(0,0,0,.25),0 1px 3px rgba(46,125,50,.6);} 50%{box-shadow:0 0 0 .5px rgba(0,0,0,.25),0 2px 10px 2px rgba(46,125,50,.9);} }
+
     .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
     .brand-logo { width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent), var(--primary)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,.4); }
     .brand-title { font-size: 16px; font-weight: 700; white-space: nowrap; }
@@ -35,8 +49,14 @@
     /* EVENT BAR */
     .event-bar { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
     .event-select { background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; outline: none; max-width: 240px; }
-    .icon-btn { background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--muted); padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all .15s; }
+    .icon-btn { background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--muted); padding: 7px 9px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all .15s; display:inline-flex;align-items:center;justify-content:center; }
     .icon-btn:hover { background: rgba(255,255,255,.12); color: var(--text); }
+    .icon-btn svg { display:block; }
+    /* API KEY TOGGLE */
+    .key-wrap { position:relative; display:flex; gap:8px; }
+    .key-wrap input { flex:1; }
+    .eye-btn { background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--muted); border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0 10px; transition:all .15s; flex-shrink:0; }
+    .eye-btn:hover { background:rgba(255,255,255,.12); color:var(--text); }
 
     /* STATUS PILL */
     .status-pill { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
@@ -147,6 +167,11 @@
 <div id="toast"></div>
 
 <header>
+  <div class="traffic-lights" title="">
+    <span class="tl tl-red"   title="Tutup"></span>
+    <span class="tl tl-yellow" title="Perkecil"></span>
+    <span class="tl tl-green"  title="Perbesar" id="tlGreen"></span>
+  </div>
   <div class="brand">
     <div class="brand-logo">TF</div>
     <span class="brand-title">Cek Bukti TF e-guru.id</span>
@@ -157,9 +182,15 @@
     <select id="selEvent" class="event-select" onchange="onEventChange(this.value)">
       <option>Memuat...</option>
     </select>
-    <button class="icon-btn" title="Event baru" onclick="doAddEvent()">＋</button>
-    <button class="icon-btn" title="Ganti nama event" onclick="doRenameEvent()">✏️</button>
-    <button class="icon-btn" title="Hapus event" onclick="doDeleteEvent()">🗑️</button>
+    <button class="icon-btn" title="Event baru" onclick="doAddEvent()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <button class="icon-btn" title="Ganti nama event" onclick="doRenameEvent()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+    <button class="icon-btn" title="Hapus event" onclick="doDeleteEvent()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </button>
   </div>
 
   <div id="statusPill" class="status-pill pill-idle">
@@ -168,10 +199,22 @@
 </header>
 
 <nav class="tabs">
-  <button class="tab-btn active" data-tab="t-process" onclick="switchTab(this, 't-process')">⚡ Proses &amp; Monitor</button>
-  <button class="tab-btn" data-tab="t-review" onclick="switchTab(this, 't-review')">🔍 Review Manual</button>
-  <button class="tab-btn" data-tab="t-settings" onclick="switchTab(this, 't-settings')">⚙️ Pengaturan</button>
-  <button class="tab-btn" data-tab="t-credentials" onclick="switchTab(this, 't-credentials')">🔑 Kunci &amp; API</button>
+  <button class="tab-btn active" data-tab="t-process" onclick="switchTab(this, 't-process')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Proses &amp; Monitor
+  </button>
+  <button class="tab-btn" data-tab="t-review" onclick="switchTab(this, 't-review')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Review Manual
+  </button>
+  <button class="tab-btn" data-tab="t-settings" onclick="switchTab(this, 't-settings')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Pengaturan
+  </button>
+  <button class="tab-btn" data-tab="t-credentials" onclick="switchTab(this, 't-credentials')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Kunci &amp; API
+  </button>
 </nav>
 
 <main>
@@ -185,9 +228,18 @@
           <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="dispSheetUrl">Spreadsheet belum dikonfigurasi</div>
         </div>
         <div class="btn-group">
-          <button id="btnStart" class="btn btn-primary" onclick="doStart()">▶ Mulai Cek</button>
-          <button id="btnPause" class="btn btn-warning" onclick="doPause()" disabled>⏸ Jeda</button>
-          <button id="btnStop"  class="btn btn-danger"  onclick="doStop()"  disabled>⏹ Berhenti</button>
+          <button id="btnStart" class="btn btn-primary" onclick="doStart()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Mulai Cek
+          </button>
+          <button id="btnPause" class="btn btn-warning" onclick="doPause()" disabled>
+            <svg id="iconPause" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            <span id="lblPause">Jeda</span>
+          </button>
+          <button id="btnStop"  class="btn btn-danger"  onclick="doStop()"  disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            Berhenti
+          </button>
         </div>
       </div>
       <div class="progress-wrap">
@@ -216,7 +268,10 @@
       <div class="card">
         <div class="card-title">
           Log Aktivitas
-          <button class="btn btn-ghost btn-sm" onclick="clearLog()">Bersihkan</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearLog()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Bersihkan
+          </button>
         </div>
         <div id="console" class="console"><div class="log info">[Sistem] Terhubung ke server.</div></div>
       </div>
@@ -235,7 +290,10 @@
             <option value="valid">VALID</option>
             <option value="all">Semua Hasil</option>
           </select>
-          <button class="btn btn-ghost btn-sm" onclick="loadReview()">🔄 Muat Ulang</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadReview()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Muat Ulang
+          </button>
         </div>
       </div>
       <div class="tbl-wrap">
@@ -328,7 +386,10 @@
           </div>
         </div>
 
-        <button class="btn btn-primary" onclick="saveEventConfig()">💾 Simpan Pengaturan Event</button>
+        <button class="btn btn-primary" onclick="saveEventConfig()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Simpan Pengaturan Event
+        </button>
       </div>
 
       <!-- Pengaturan Umum -->
@@ -361,7 +422,10 @@
           <div class="helper">Confidence Tesseract minimum agar hasil diterima langsung</div>
         </div>
 
-        <button class="btn btn-primary" onclick="saveGlobalConfig()">💾 Simpan Pengaturan Umum</button>
+        <button class="btn btn-primary" onclick="saveGlobalConfig()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Simpan Pengaturan Umum
+        </button>
       </div>
     </div>
   </div>
@@ -373,14 +437,20 @@
       <div class="card">
         <div class="card-title">Kunci Google (Sheets &amp; Drive)</div>
 
-        <div id="credStatus" class="alert alert-warn">⚠️ Belum ada kunci Google yang aktif.</div>
+        <div id="credStatus" class="alert alert-warn" style="display:flex;align-items:center;gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Belum ada kunci Google yang aktif.
+        </div>
 
         <div class="fgrp">
           <label>Pilih File Kunci (.json)</label>
           <input id="fileKey" type="file" accept=".json" style="color:var(--text);background:transparent;border:0;padding:0;" />
           <div class="helper">File service_account.json (disarankan) atau client_secret.json (OAuth)</div>
         </div>
-        <button class="btn btn-primary" onclick="uploadKey()">⬆️ Unggah Kunci</button>
+        <button class="btn btn-primary" onclick="uploadKey()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          Unggah Kunci
+        </button>
 
         <div class="divider"></div>
 
@@ -400,9 +470,18 @@
 
         <div class="fgrp">
           <label>API Key Google Gemini</label>
-          <div style="display:flex;gap:8px;">
-            <input id="cfgGeminiKey" type="text" placeholder="AIzaSy..." />
-            <button class="btn btn-ghost btn-sm" onclick="testGemini()">Tes Key</button>
+          <div class="key-wrap">
+            <input id="cfgGeminiKey" type="password" placeholder="AIzaSy..." autocomplete="off" />
+            <button type="button" class="eye-btn" id="btnToggleKey" onclick="toggleKeyVisibility()" title="Tampilkan / Sembunyikan">
+              <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="testGemini()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Tes Key
+            </button>
           </div>
           <div class="helper">Dapatkan gratis di <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#818cf8;">aistudio.google.com/apikey</a></div>
         </div>
@@ -410,7 +489,17 @@
         <div class="frow">
           <div class="fgrp">
             <label>Model Gemini</label>
-            <input id="cfgGeminiModel" type="text" value="gemini-3.5-flash-lite" />
+            <select id="cfgGeminiModel">
+              <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite ★ (Terbaik &amp; Ringan)</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+              <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+              <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b (sangat hemat)</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+            </select>
+            <div class="helper">Model lebih besar = lebih akurat tapi lebih lambat &amp; mahal</div>
           </div>
           <div class="fgrp">
             <label>Mode Akun</label>
@@ -441,7 +530,10 @@
 
         <div id="geminiTestResult" style="font-size:13px;margin-top:8px;"></div>
 
-        <button class="btn btn-primary" onclick="saveGlobalConfig()">💾 Simpan Pengaturan Gemini</button>
+        <button class="btn btn-primary" onclick="saveGlobalConfig()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Simpan Pengaturan Gemini
+        </button>
       </div>
     </div>
   </div>
@@ -522,8 +614,14 @@ function setStatus(running, paused) {
   }
   $('btnStart').disabled = running;
   $('btnPause').disabled = !running;
-  $('btnPause').textContent = paused ? '▶ Lanjut' : '⏸ Jeda';
+  $('lblPause').textContent = paused ? 'Lanjut' : 'Jeda';
+  $('iconPause').innerHTML = paused
+    ? '<polygon points="5 3 19 12 5 21 5 3"/>'
+    : '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
   $('btnStop').disabled = !running;
+  // traffic light glow
+  const tg = document.getElementById('tlGreen');
+  if (tg) { running && !paused ? tg.classList.add('active-glow') : tg.classList.remove('active-glow'); }
 }
 
 // =========================================================
@@ -554,7 +652,9 @@ async function loadConfig(eventName) {
 
     // Fill credentials tab
     $('credStatus').className = 'alert ' + (state.hasCreds ? 'alert-info' : 'alert-warn');
-    $('credStatus').textContent = state.hasCreds ? '✅ Kunci Google aktif dan siap digunakan.' : '⚠️ Belum ada kunci Google yang aktif.';
+    $('credStatus').innerHTML = state.hasCreds
+      ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Kunci Google aktif dan siap digunakan.`
+      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Belum ada kunci Google yang aktif.`;
 
     // Tabs info
     if (data.tabs && data.tabs.length) {
@@ -594,7 +694,11 @@ function fillSettingsForms(cfg) {
   $('cfgClaimTtl').value = cfg.claim_ttl_min || 30;
   $('cfgOcrConf').value = cfg.ocr_conf_ok != null ? cfg.ocr_conf_ok : 75;
   $('cfgGeminiKey').value = cfg.gemini_api_key || '';
-  $('cfgGeminiModel').value = cfg.gemini_model || 'gemini-3.5-flash-lite';
+  // Model Gemini dropdown — fallback ke default jika model tidak ada di list
+  const mdl = $('cfgGeminiModel');
+  const modelVal = cfg.gemini_model || 'gemini-2.0-flash-lite';
+  if ([...mdl.options].some(o => o.value === modelVal)) mdl.value = modelVal;
+  else mdl.value = 'gemini-2.0-flash-lite';
   $('cfgGeminiPaid').value = cfg.gemini_paid ? 'true' : 'false';
   $('cfgGeminiRpm').value = cfg.gemini_rpm || 0;
   $('cfgGeminiConc').value = cfg.gemini_concurrency || 0;
@@ -684,7 +788,7 @@ async function saveGlobalConfig() {
       claim_ttl_min: parseInt($('cfgClaimTtl').value) || 30,
       ocr_conf_ok: parseFloat($('cfgOcrConf').value) || 75,
       gemini_api_key: $('cfgGeminiKey').value.trim(),
-      gemini_model: $('cfgGeminiModel').value.trim(),
+      gemini_model: $('cfgGeminiModel').value,
       gemini_paid: $('cfgGeminiPaid').value === 'true',
       gemini_rpm: parseInt($('cfgGeminiRpm').value) || 0,
       gemini_concurrency: parseInt($('cfgGeminiConc').value) || 0,
@@ -748,11 +852,10 @@ async function testGemini() {
   const r = await fetch('/api/gemini/test', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key, model}) });
   const d = await r.json();
   const el = $('geminiTestResult');
-  el.textContent = (d.ok ? '✅ ' : '❌ ') + d.message;
+  const okIcon = `<svg style="display:inline;vertical-align:-2px;margin-right:4px;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const errIcon = `<svg style="display:inline;vertical-align:-2px;margin-right:4px;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  el.innerHTML = (d.ok ? okIcon : errIcon) + d.message;
   el.style.color = d.ok ? '#34d399' : '#f87171';
-  if (d.ok && d.models.length) {
-    el.textContent += '\nModel tersedia: ' + d.models.slice(0,5).join(', ');
-  }
   toast(d.ok ? 'Gemini OK!' : 'Tes Gemini gagal', d.ok ? 'ok' : 'err');
   addLog((d.ok ? '✅ ' : '❌ ') + d.message, d.ok ? 'ok' : 'err');
 }
@@ -923,6 +1026,16 @@ function connectWS() {
 // =========================================================
 // INIT
 // =========================================================
+function toggleKeyVisibility() {
+  const inp = $('cfgGeminiKey');
+  const icon = $('eyeIcon');
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  icon.innerHTML = isHidden
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+}
+
 window.onload = () => {
   loadConfig();
   connectWS();
@@ -934,7 +1047,10 @@ window.onload = () => {
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
     <div style="padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
       <span id="modalTitle" style="font-weight:700;font-size:14px;">Bukti Transfer</span>
-      <button class="btn btn-ghost btn-sm" onclick="$('imgModal').style.display='none'">✕ Tutup</button>
+      <button class="btn btn-ghost btn-sm" onclick="$('imgModal').style.display='none'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Tutup
+      </button>
     </div>
     <div style="padding:16px;overflow:auto;display:flex;align-items:center;justify-content:center;background:#030712;min-height:300px;">
       <img id="modalImg" src="" style="max-width:100%;max-height:75vh;object-fit:contain;border-radius:6px;" alt="Bukti Transfer" />
