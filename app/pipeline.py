@@ -237,19 +237,26 @@ class Engine:
         ids = extract_file_ids(row.link_raw)
         if not ids:
             return self._simple(row, "NO_LINK", "tidak ada link bukti")
+        t0 = time.monotonic()
         data, mime = self.drive.fetch(ids[0])
+        t_dl = time.monotonic() - t0
+        t_ocr = t_gem = 0.0
         if not mime.startswith("image/"):
             return self._simple(row, "NOT_IMAGE", f"file bukan gambar ({mime}), cek manual")
 
         if self.ocr_ok:
+            t1 = time.monotonic()
             text, conf = ocr.run_ocr(data)
+            t_ocr = time.monotonic() - t1
             ext = parser.extract(text, conf)
             verdict = validate(row, ext, self.ctx)
 
             if verdict.codes & RETRYABLE and not verdict.codes & HARD_CODES and self.gemini and not self.gemini_off:
                 ocr_ref = ext.ref
                 try:
+                    t2 = time.monotonic()
                     ext_g = self.gemini.extract(data, mime)
+                    t_gem = time.monotonic() - t2
                     ext_g.ref = ext_g.ref or ocr_ref
                     ext, verdict = ext_g, validate(row, ext_g, self.ctx)
                 except GeminiQuotaError:
@@ -267,8 +274,12 @@ class Engine:
                 verdict.add("GEMINI_QUOTA", "kuota Gemini habis")
 
         else:                                    # mode Gemini saja (Tesseract tidak tersedia)
+            t2 = time.monotonic()
             ext = self._gemini_only(data, mime)
+            t_gem = time.monotonic() - t2
             verdict = validate(row, ext, self.ctx)
+        self.on_log(f"Baris {row.row}: unduh {t_dl:.1f}s | tesseract {t_ocr:.1f}s | gemini {t_gem:.1f}s "
+                    f"| total {time.monotonic() - t0:.1f}s")
         if len(ids) > 1:
             verdict.add("MULTI", f"ada {len(ids)} file bukti, hanya yang pertama diperiksa")
         ref, dup_of = "", None
