@@ -196,6 +196,9 @@
   <div id="statusPill" class="status-pill pill-idle">
     <div class="dot"></div><span id="statusText">Idle</span>
   </div>
+  <button class="icon-btn" id="btnLogout" title="Keluar" onclick="doLogout()" style="display:none;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  </button>
 </header>
 
 <nav class="tabs">
@@ -543,6 +546,24 @@
 </main>
 
 <script>
+// =========================================================
+// AUTH: sesi habis -> kembali ke halaman login
+// =========================================================
+(() => {
+  const _fetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const r = await _fetch(...args);
+    if (r.status === 401 && !String(args[0]).includes('/api/login')) { location.href = '/login'; }
+    return r;
+  };
+  _fetch('/api/auth/status').then(r => r.json()).then(d => {
+    if (d.enabled) document.getElementById('btnLogout').style.display = '';
+  }).catch(() => {});
+})();
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST' });
+  location.href = '/login';
+}
 // =========================================================
 // STATE
 // =========================================================
@@ -1023,7 +1044,10 @@ function connectWS() {
       (msg.recent_results || []).forEach(addResultRow);
     }
   };
-  ws.onclose = () => { addLog('Koneksi terputus, mencoba ulang...', 'warn'); setTimeout(connectWS, 2500); };
+  ws.onclose = (ev) => {
+    if (ev.code === 4401) { location.href = '/login'; return; }
+    addLog('Koneksi terputus, mencoba ulang...', 'warn'); setTimeout(connectWS, 2500);
+  };
   ws.onerror = () => ws.close();
 }
 

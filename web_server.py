@@ -14,6 +14,7 @@ from app.config import Config, Store, APP_DIR, parse_spreadsheet_id, parse_gid
 from app.sheets import SheetsClient, DriveClient, get_credentials, find_service_account
 from app.pipeline import Engine, load_review_queue, apply_manual
 from app.gemini import GeminiReader
+from app import webauth
 
 def _make_sheets(spreadsheet_id: str, sheet_title: str = "", sheet_id: int = 0) -> SheetsClient:
     """Buat SheetsClient dengan credentials otomatis."""
@@ -52,6 +53,42 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(webauth.AuthMiddleware)   # aktif hanya bila password diatur
+
+
+# --- Login ---
+@app.get("/login", response_class=HTMLResponse)
+def login_page():
+    from fastapi.responses import RedirectResponse
+    if not webauth.enabled():
+        return RedirectResponse("/", status_code=303)
+    return HTMLResponse(webauth.LOGIN_HTML, headers={"Cache-Control": "no-store"})
+
+
+@app.post("/api/login")
+def do_login(payload: Dict[str, str]):
+    import time as _t
+    if not webauth.enabled():
+        return {"status": "ok"}
+    if not webauth.check_password(str(payload.get("password", ""))):
+        _t.sleep(1.0)                                  # perlambat tebak-tebakan password
+        raise HTTPException(status_code=401, detail="Password salah")
+    resp = JSONResponse({"status": "ok"})
+    resp.set_cookie(webauth.COOKIE, webauth.make_token(), max_age=webauth.MAX_AGE,
+                    httponly=True, samesite="lax", path="/")
+    return resp
+
+
+@app.post("/api/logout")
+def do_logout():
+    resp = JSONResponse({"status": "ok"})
+    resp.delete_cookie(webauth.COOKIE, path="/")
+    return resp
+
+
+@app.get("/api/auth/status")
+def auth_status():
+    return {"enabled": webauth.enabled()}
 
 # State manager
 class AppState:
@@ -121,10 +158,12 @@ def get_config(event_name: Optional[str] = None):
         s = Store.load()
         name = event_name or s.last_event or (s.names()[0] if s.names() else "Event 1")
         cfg = s.config_for(name)
+        cfg_out = dict(cfg.__dict__)
+        cfg_out["gemini_api_key"] = webauth.mask_key(cfg.gemini_api_key)   # key asli tidak dikirim ke browser
         return {
             "events": s.names(),
             "current_event": name,
-            "config": cfg.__dict__,
+            "config": cfg_out,
             "has_credentials": bool(find_service_account()) or (APP_DIR / "client_secret.json").exists() or (Path.cwd() / "client_secret.json").exists(),
             "is_running": bool(state.running_events.get(name)),
             "is_paused": bool(state.paused_events.get(name)),
@@ -143,6 +182,8 @@ def save_config(req: SaveConfigRequest):
     s = Store.load()
     cfg = s.config_for(req.event_name)
     for k, v in req.config.items():
+        if k == "gemini_api_key" and webauth.is_masked(str(v)):
+            continue                                   # key tidak diubah -> pakai yang tersimpan
         if hasattr(cfg, k):
             setattr(cfg, k, v)
     # Auto-derive spreadsheet_id & gid dari URL jika ada
@@ -214,9 +255,12 @@ def connect_sheets(payload: Dict[str, str]):
 @app.post("/api/gemini/test")
 def test_gemini(payload: Dict[str, str]):
     key = payload.get("key", "").strip()
+    if not key or webauth.is_masked(key):              # pakai key yang tersimpan di server
+        key = Store.load().globals.get("gemini_api_key", "") or os.environ.get("GEMINI_API_KEY", "")
     if not key:
         raise HTTPException(status_code=400, detail="API key Gemini kosong")
-    ok, msg, models = test_gemini_key(key)
+    model = (payload.get("model") or "").strip() or "gemini-3.1-flash-lite"
+    ok, msg, models = test_gemini_key(key, model)
     return {"ok": ok, "message": msg, "models": models}
 
 @app.post("/api/process/start")
